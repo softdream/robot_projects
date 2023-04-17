@@ -48,9 +48,11 @@ public:
 	}
 
 	int getFd() const
-	{
-		return fd;
-	}
+        {
+                return fd;
+        }
+
+
 
 private:
 	bool initUart( const std::string& device_path )
