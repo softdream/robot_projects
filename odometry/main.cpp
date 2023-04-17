@@ -1,11 +1,13 @@
 #include "keyboard.h"
 #include "odometry.h"
-#include "visualize.h"
 
 #include <thread>
 #include <chrono>
 
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
+odom::Odometry<float> odometry;
+odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero();
+
 
 // ------------------------------------------------------------------------------------------- //
 
@@ -50,13 +52,25 @@ void keyboardControl()
         keyboard.spin();
 }
 
+void odometryThread()
+{
+	odometry.initDevice();
+	odometry.spin();
+	
+	odometry.releaseDevice();
+}
+
 int main()
 {
 	std::cout<<"---------------------- DESKTOP ROBORT LOCALIZATION --------------------"<<std::endl;
 
 	std::thread keyboard_control_thread( keyboardControl );
+	//std::thread odometry_thread( odometryThread );
+
 
 	keyboard_control_thread.join();
+	// odometry_thread.join();
+
 
 	while(1){
 

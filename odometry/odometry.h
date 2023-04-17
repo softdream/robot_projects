@@ -104,6 +104,7 @@ public:
 
 			// millis(), velocity, delta_s, delta_angle, imu.gz
 			if ( type == measurement ) {
+				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
 				if ( measure_[1] != 0 ) is_static_ = true;
 				else is_static_ = false;
@@ -160,6 +161,36 @@ public:
 		}
 	
 		return nullptr;
+	}
+
+	const Vector3& getRobotPose() const
+	{
+		return robot_pose_;
+	}
+
+	const Vector5& getMeasurement() const
+	{
+		return measure_;
+	}
+
+	const Vector3& getSensorData() const
+	{
+		return sensor_;
+	}
+
+	const DataType getHumidity() const
+	{
+		return sensor_[0];
+	}
+
+	const DataType getTemperature() const
+	{
+		return sensor_[1];
+	}
+
+	const DataType getDistance() const
+	{
+		return sensor_[2];
 	}
 
 	// send control vector
