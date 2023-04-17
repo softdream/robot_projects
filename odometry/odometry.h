@@ -16,11 +16,32 @@ namespace odom
 
 using namespace std::placeholders;
 
+typedef struct Control_
+{
+	Control_(  )
+	{
+
+	}
+
+	Control_( const float v_, const float w_ ) : v( v_ ), w( w_ )
+	{
+
+	}
+
+	float v;
+	float w;
+}Control;
+
+
 typedef enum MessageType_
 {
 	none,
 	measurement,
-	sensor
+	sensor,
+	imu_calibration,
+	imu_calibration_done,
+	motor,
+	encoder
 }MessageType;
 
 template<typename T>
@@ -120,6 +141,18 @@ public:
 				}
 				
 			}
+			else if ( type == imu_calibration ) {
+				std::cout<<"Starting IMU Calibration !"<<std::endl;
+			}
+			else if ( type == imu_calibration_done ) {
+				std::cout<<"IMU Calibration DONE !"<<std::endl;
+			}
+			else if ( type == encoder ) {
+				std::cout<<"Encoder init !"<<std::endl;
+			}
+			else if ( type == motor ) {
+				std::cout<<"Motor init !"<<std::endl;
+			}
 			// humidity, temperature, distance 
 			else if ( type == sensor ) {
 				
@@ -129,11 +162,31 @@ public:
 		return nullptr;
 	}
 
+	// send control vector
+	int sendControlVector( const DataType v, const DataType w )
+	{
+		Control u( v, w );	
+		return uart_->writeData( u );	
+	}
+
 private:
 	MessageType parseData()
 	{
 		std::string str = this->recv_buffer_;
 		
+		if ( str.compare( "calibration" ) == 0 ) {
+			return imu_calibration;
+		}
+		else if ( str.compare( "done" ) == 0 ) {
+			return imu_calibration_done;
+		}
+		else if ( str.compare( "encoder" ) == 0 ) {
+			return encoder;
+		}	
+		else if ( str.compare( "motor" ) == 0 ) {
+			return motor;
+		}	
+
 		std::istringstream iss(str);
 
 		std::string tag;

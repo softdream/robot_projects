@@ -1,5 +1,6 @@
 #include "keyboard.h"
 #include "odometry.h"
+#include "visualize.h"
 
 #include <thread>
 #include <chrono>
