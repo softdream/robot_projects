@@ -136,7 +136,7 @@ void motorControl()
   ImuData imu = getImuData();
 
   // 发送测量值到上位机
-  Serial.printf( "meas %ld %.2f %.2f %.2f %.2f\n", millis(), velocity, delta_s, delta_angle, imu.gz );
+  Serial.printf( "meas %ld %.2f %.2f %.2f %.2f %.2f %.2f\n", millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm );
   
   // reset encoder count
   l_count = 0;

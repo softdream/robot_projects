@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -rdynamic CMakeFiles/lidar_test.dir/src/main.cpp.o -o lidar_test   -L/home/riki/Test/robot_projects/m1c1_lidar_test/lib  -Wl,-rpath,/home/riki/Test/robot_projects/m1c1_lidar_test/lib -Wl,-Bstatic -lcspclidar_driver -Wl,-Bdynamic -lpthread 

@@ -54,6 +54,7 @@ public:
         using Vector4 = typename Eigen::Matrix<DataType, 4, 1>;
 	using Vector5 = typename Eigen::Matrix<DataType, 5, 1>;
         using Vector6 = typename Eigen::Matrix<DataType, 6, 1>;
+	using Vector7 = typename Eigen::Matrix<DataType, 7, 1>;
 
         using Matrix3x3 = typename Eigen::Matrix<DataType, 3, 3>;
 
@@ -102,11 +103,11 @@ public:
 		if ( uart_->readData( recv_buffer_, SIZE ) ) {
 			MessageType type = parseData();
 
-			// millis(), velocity, delta_s, delta_angle, imu.gz
+			// millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm
 			if ( type == measurement ) {
 				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
-				if ( measure_[1] != 0 ) is_static_ = true;
+				if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
 				else is_static_ = false;
 	
 				Vector2 u( measure_[2], measure_[3] );
@@ -168,29 +169,29 @@ public:
 		return robot_pose_;
 	}
 
-	const Vector5& getMeasurement() const
+	const Vector7& getMeasurement() const
 	{
 		return measure_;
 	}
 
 	const Vector3& getSensorData() const
 	{
-		return sensor_;
+		return sensors_;
 	}
 
 	const DataType getHumidity() const
 	{
-		return sensor_[0];
+		return sensors_[0];
 	}
 
 	const DataType getTemperature() const
 	{
-		return sensor_[1];
+		return sensors_[1];
 	}
 
 	const DataType getDistance() const
 	{
-		return sensor_[2];
+		return sensors_[2];
 	}
 
 	// send control vector
@@ -227,7 +228,7 @@ private:
 			measure_.setZero();
 		
 			std::string num;
-			for ( size_t i = 0; i < 5; i ++ ) {
+			for ( size_t i = 0; i < 7; i ++ ) {
 				iss >> num;
 				measure_(i) = static_cast<DataType>( std::stod( num ) );
 			}
@@ -270,7 +271,7 @@ private:
 	char recv_buffer_[SIZE];
 
 	// data
-	Vector5 measure_ = Vector5::Zero();
+	Vector7 measure_ = Vector7::Zero();
 	Vector3 sensors_ = Vector3::Zero();
 };
 
