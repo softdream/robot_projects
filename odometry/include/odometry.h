@@ -9,12 +9,15 @@
 #include <mutex>
 #include <thread>
 
+#include <functional>
+
 #define SIZE 100
 
 namespace odom
 {
 
 using namespace std::placeholders;
+
 
 typedef struct Control_
 {
@@ -58,6 +61,8 @@ public:
 
         using Matrix3x3 = typename Eigen::Matrix<DataType, 3, 3>;
 
+	using CallBackFunc = std::function<void( const Vector3& pose )>;
+
 	Odometry()
 	{
 
@@ -89,6 +94,11 @@ public:
 	{
 		uart_->closeDevice();
 		delete uart_;
+	}
+
+	void registerCallbackFunc( const CallBackFunc& cb ) 
+	{
+		cb_ = cb;
 	}
 
 	void spin()
@@ -140,6 +150,9 @@ public:
 					pose_mux_.lock();
 					robot_pose_ = odom_ekf_.getStateX();
 					pose_mux_.unlock();
+
+					// callback function
+					cb_( robot_pose_ );
 				}
 				
 			}
@@ -158,7 +171,8 @@ public:
 			// humidity, temperature, distance 
 			else if ( type == sensor ) {
 				
-			} 
+			}
+
 		}
 	
 		return nullptr;
@@ -273,6 +287,9 @@ private:
 	// data
 	Vector7 measure_ = Vector7::Zero();
 	Vector3 sensors_ = Vector3::Zero();
+
+	// callback function
+	CallBackFunc cb_;
 };
 
 }

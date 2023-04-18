@@ -52,9 +52,16 @@ void keyboardControl()
         keyboard.spin();
 }
 
+void odometryCallback( const odom::Odometry<float>::Vector3& measure )
+{
+	std::cout<<"odometry call back function : "<<std::endl;
+}
+
 void odometryThread()
 {
 	odometry.initDevice();
+	odometry.registerCallbackFunc( odometryCallback );
+
 	odometry.spin();
 	
 	odometry.releaseDevice();

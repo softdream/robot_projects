@@ -180,6 +180,24 @@ public:
                 return true;
         }
 
+	const int write( const char* data, const int len, const int port, const std::string& ip )
+        {
+                struct sockaddr_in dest_addr;
+                dest_addr.sin_family = AF_INET;
+                dest_addr.sin_addr.s_addr = inet_addr( ip.c_str() );
+                dest_addr.sin_port = htons( port );
+
+                int ret = sendto( sock_fd, data, len, 0, (struct sockaddr*)&dest_addr, sizeof( dest_addr ) );
+                if( ret <= 0 ){
+                        std::cerr<<"send data falied ..."<<std::endl;
+                        return false;
+                }
+                else {
+                        std::cerr<<"send data succussfully ..."<<std::endl;
+                }
+                return true;
+        }
+
 
 protected:
 	int sock_fd = -1;
@@ -261,10 +279,17 @@ public:
 	}
 
 	template<typename T>
-	void send( T& data )
+	void send( T&& data )
 	{
 		this->write( (char *)&data, sizeof( data ) );
 	}
+
+	template<typename T>
+        void send( const int port, const std::string& ip, T&& data )
+        {
+                this->write( (char *)&data, sizeof( data ), port, ip );
+        }
+
 
 };
 
