@@ -90,7 +90,7 @@ private:
 			return false;
 		}
 		else {
-			std::cout<<"BaudRate = 115200, StopBit = 1, Parity = none !"<<std::endl;
+			std::cout<<"BaudRate = 230400, StopBit = 1, Parity = none !"<<std::endl;
 		}
 
 		tcflush(fd, TCIFLUSH); // Discards old data in the rx buffer
