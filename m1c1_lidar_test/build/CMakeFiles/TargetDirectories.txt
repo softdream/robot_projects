@@ -1,3 +1,0 @@
-/home/riki/Test/robot_projects/m1c1_lidar_test/build/CMakeFiles/rebuild_cache.dir
-/home/riki/Test/robot_projects/m1c1_lidar_test/build/CMakeFiles/lidar_test.dir
-/home/riki/Test/robot_projects/m1c1_lidar_test/build/CMakeFiles/edit_cache.dir

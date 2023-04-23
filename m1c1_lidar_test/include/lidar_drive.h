@@ -17,7 +17,7 @@ namespace lidar
 using namespace cspclidar;
 
 template<typename T>
-using CallBackRef = std::function<void( T& )>;
+using CallBackRef = std::function<void( const T& )>;
 
 class Lidar
 {
