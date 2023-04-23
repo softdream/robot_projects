@@ -1,5 +1,6 @@
 #include "keyboard.h"
 #include "odometry.h"
+#include "data_transport.h"
 
 #include <thread>
 #include <chrono>
@@ -7,7 +8,7 @@
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
 odom::Odometry<float> odometry;
 odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero();
-
+transport::Sender data_sender;
 
 // ------------------------------------------------------------------------------------------- //
 
@@ -57,9 +58,14 @@ void keyboardControl()
         keyboard.spin();
 }
 
-void odometryCallback( const odom::Odometry<float>::Vector3& measure )
+void odometryCallback( const odom::Odometry<float>::Vector3& pose )
 {
 	std::cout<<"odometry call back function : "<<std::endl;
+	odom_pose = pose;
+
+	// send to 
+	transport::Pose2D pose_2d( pose[0], pose[1], pose[2] );
+	data_sender.send( 2335, "192.168.1.35", pose_2d );
 }
 
 void odometryThread()

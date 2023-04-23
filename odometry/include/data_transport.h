@@ -22,7 +22,27 @@
 namespace transport
 {
 
-template<int SIZE>
+typedef struct Pose2D_
+{
+
+	Pose2D_()
+	{
+
+	}
+
+	Pose2D_( const float x_, const float y_, const float theta_ ) : 
+		 x( x_ ), y( y_ ), theta( theta_ )
+	{
+
+	}
+
+	float x = 0.0;
+	float y = 0.0;
+	float theta = 0.0;
+
+}Pose2D;
+
+template<int BUFFER_SIZE>
 class UdpServer
 {
 public:
@@ -116,7 +136,7 @@ protected:
         socklen_t client_sock_len ;
 
         // receive buffer
-        char recv_buffer[SIZE];
+        char recv_buffer[BUFFER_SIZE];
 };
 
 class UdpClient
