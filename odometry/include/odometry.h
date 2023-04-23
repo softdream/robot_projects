@@ -108,8 +108,19 @@ public:
                 }
         }
 
+        void spin( const CallBackFunc& cb )
+        {
+		registerCallbackFunc( cb );
+
+                while(true){
+                        event_base_.dispatcher();
+                }
+        }
+
 	void* odomRecvCallback( int fd, void* arg )
 	{
+		usleep(10000);
+		memset( recv_buffer_, 0, SIZE );
 		if ( uart_->readData( recv_buffer_, SIZE ) ) {
 			MessageType type = parseData();
 
@@ -117,7 +128,7 @@ public:
 			if ( type == measurement ) {
 				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
-				if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
+				/*if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
 				else is_static_ = false;
 	
 				Vector2 u( measure_[2], measure_[3] );
@@ -154,6 +165,7 @@ public:
 					// callback function
 					cb_( robot_pose_ );
 				}
+				}*/
 				
 			}
 			else if ( type == imu_calibration ) {
@@ -219,7 +231,8 @@ private:
 	MessageType parseData()
 	{
 		std::string str = this->recv_buffer_;
-		
+		//std::cout<<"srt : "<<str<<std::endl; 
+
 		if ( str.compare( "calibration" ) == 0 ) {
 			return imu_calibration;
 		}
@@ -239,6 +252,8 @@ private:
                 iss >> tag;
 
 		if ( tag.compare( "meas" ) == 0 ) {
+			//std::cout<<str<<std::endl;
+			if ( str.length() < 20 ) return none;
 			measure_.setZero();
 		
 			std::string num;

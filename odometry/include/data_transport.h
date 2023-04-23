@@ -198,7 +198,6 @@ public:
                 return true;
         }
 
-
 protected:
 	int sock_fd = -1;
 
