@@ -1,6 +1,7 @@
 #ifndef __ODOMETRY_H
 #define __ODOMETRY_H
 
+#include "log.h"
 #include "ekf_fusion.h"
 #include "EpollEvent.h"
 

@@ -291,25 +291,42 @@ public:
 	{
 
 	}
+	
+	Sender( const std::string& dst_ip, const int dst_port ) : ip_( dst_ip ), port_( dst_port )
+	{
+
+	} 
 
 	~Sender()
 	{
 
 	}
 
-	template<typename T>
-	void send( T&& data )
+	void setDstIp( const std::string& dst_ip ) 
 	{
-		this->write( (char *)&data, sizeof( data ) );
+		ip_ = dst_ip;
+	} 
+
+	void setDstPort( const int dst_port )
+	{
+		port_ = dst_port;
+	} 
+
+	template<typename T>
+	int send( T&& data )
+	{
+		return this->write( (char *)&data, sizeof( data ), port_, ip_ );
 	}
 
 	template<typename T>
-        void send( const int port, const std::string& ip, T&& data )
+        int send( const int port, const std::string& ip, T&& data )
         {
-                this->write( (char *)&data, sizeof( data ), port, ip );
+                return this->write( (char *)&data, sizeof( data ), port, ip );
         }
 
-
+private:
+	std::string ip_;
+	int port_ = -1;	
 };
 
 }

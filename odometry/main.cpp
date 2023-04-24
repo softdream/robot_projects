@@ -8,7 +8,7 @@
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
 odom::Odometry<float> odometry;
 odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero();
-transport::Sender data_sender;
+transport::Sender odom_sender( "192.168.1.35", 2335 );
 
 // ------------------------------------------------------------------------------------------- //
 
@@ -65,7 +65,7 @@ void odometryCallback( const odom::Odometry<float>::Vector3& pose )
 
 	// send to 
 	transport::Pose2D pose_2d( pose[0], pose[1], pose[2] );
-	data_sender.send( 2335, "192.168.1.35", pose_2d );
+	odom_sender.send( pose_2d );
 }
 
 void odometryThread()
