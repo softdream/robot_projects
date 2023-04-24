@@ -1,5 +1,6 @@
 #include "motor.h"
 #include "imu.h"
+#include "uart.h"
 
 float required_rpm_left = 0;
 float required_rpm_right = 0; 
@@ -54,7 +55,7 @@ void encoderInit()
 
   interrupts(); //打开外部中断 
 
-  Serial.println("encoder");
+  uart1.print("encoder");
 }
 
 int rpmToPWM(float rpm)
@@ -105,8 +106,8 @@ float getVelocity( float motor1_rpm, float motor2_rpm )
 
 float getDeltaS( long l_count_c, long r_count_c )
 {
-  float l_s = ((float)l_count_c / 2100) * circumference;
-  float r_s = -((float)r_count_c / 2100) * circumference;
+  float l_s = ((float)l_count_c / pulse_number) * circumference;
+  float r_s = -((float)r_count_c / pulse_number) * circumference;
 
   //Serial.printf("delta s : %f\n", (l_s + r_s) / 2);
   return (l_s + r_s) / 2;
@@ -114,8 +115,8 @@ float getDeltaS( long l_count_c, long r_count_c )
 
 float getDeltaAngle( long l_count_c, long r_count_c )
 {
-  float l_s = ((float)l_count_c / 2100) * circumference;
-  float r_s = -((float)r_count_c / 2100) * circumference;
+  float l_s = ((float)l_count_c / pulse_number) * circumference;
+  float r_s = -((float)r_count_c / pulse_number) * circumference;
 
   return (r_s - l_s) / base_width;
 }
@@ -123,8 +124,8 @@ float getDeltaAngle( long l_count_c, long r_count_c )
 // 定时器中断函数, 频率20Hz
 void motorControl()
 {    
-  float l_rpm = ( 60 * l_count / ( 468 * 0.05 ) ); // 
-  float r_rpm = -60 * r_count / ( 468 * 0.05 );  // 这里正负号要修改，适应车身的前进方向
+  float l_rpm = ( 60 * l_count / ( pulse_number * 0.05 ) ); // 
+  float r_rpm = -60 * r_count / ( pulse_number * 0.05 );  // 这里正负号要修改，适应车身的前进方向
 
   //Serial.printf("left  rpm : %f\n", l_rpm);
   //Serial.printf("right rpm : %f\n", r_rpm);
@@ -136,7 +137,8 @@ void motorControl()
   ImuData imu = getImuData();
 
   // 发送测量值到上位机
-  Serial.printf( "meas %ld %.2f %.2f %.2f %.2f %.2f %.2f\n", millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm );
+  uart1.printf( "meas %ld %.4f %.4f %.4f %.4f %.4f %.4f\n", millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm );
+  //Serial.printf( "meas %ld %.2f %.2f %.2f %.2f %.2f %.2f\n", millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm );
   
   // reset encoder count
   l_count = 0;
@@ -146,8 +148,8 @@ void motorControl()
   float l_out = pid_l.caculate( required_rpm_left, l_rpm );
   float r_out = pid_r.caculate( required_rpm_right, r_rpm );
  
-  setPwm( rpmToPWM(required_rpm_left), rpmToPWM(required_rpm_right) ); 
-  //setPwm( l_out, r_out ); 
+  //setPwm( rpmToPWM(required_rpm_left), rpmToPWM(required_rpm_right) ); 
+  setPwm( l_out, r_out ); 
 }
 
 void motorGpioInit()
@@ -182,7 +184,7 @@ void motorInit()
   // 打开定时器中断
   control_timer.attach_ms( interrupt_time_control, motorControl );
   
-  Serial.println("motor");
+  uart1.print("motor");
 }
 
 void cacuRPM( float v, float w )
