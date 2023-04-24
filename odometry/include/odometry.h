@@ -129,7 +129,7 @@ public:
 			if ( type == measurement ) {
 				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
-				/*if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
+				if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
 				else is_static_ = false;
 	
 				Vector2 u( measure_[2], measure_[3] );
@@ -166,7 +166,6 @@ public:
 					// callback function
 					cb_( robot_pose_ );
 				}
-				}*/
 				
 			}
 			else if ( type == imu_calibration ) {

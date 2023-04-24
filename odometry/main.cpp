@@ -8,14 +8,14 @@
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
 odom::Odometry<float> odometry;
 odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero();
-transport::Sender odom_sender( "192.168.1.35", 2335 );
+transport::Sender odom_sender( "192.168.1.9", 2335 );
 
 // ------------------------------------------------------------------------------------------- //
 
 void keyWPressed()
 {
 	std::cout<<"key W pressed !"<<std::endl;
-	odometry.sendControlVector( 0.2, 0.0 );
+	odometry.sendControlVector( 0.15, 0.0 );
 }
 
 void keyWReleased()
@@ -27,7 +27,7 @@ void keyWReleased()
 void keyAPressd()
 {
 	std::cout<<"key A pressed !"<<std::endl;
-	odometry.sendControlVector( 0.0, 1 );
+	odometry.sendControlVector( 0.0, 1.5 );
 }
 
 void keyAReleased()
@@ -39,7 +39,7 @@ void keyAReleased()
 void keyDPressed()
 {
 	std::cout<<"key D pressed !"<<std::endl;
-	odometry.sendControlVector( 0.0, -1 );
+	odometry.sendControlVector( 0.0, -1.5 );
 }
 
 void keyDReleased()
@@ -60,8 +60,9 @@ void keyboardControl()
 
 void odometryCallback( const odom::Odometry<float>::Vector3& pose )
 {
-	std::cout<<"odometry call back function : "<<std::endl;
+	//std::cout<<"odometry call back function : "<<std::endl;
 	odom_pose = pose;
+	std::cout<<"odom_pose : "<<odom_pose.transpose()<<std::endl;
 
 	// send to 
 	transport::Pose2D pose_2d( pose[0], pose[1], pose[2] );
