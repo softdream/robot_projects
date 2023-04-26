@@ -67,19 +67,19 @@ struct LidarScan{
 		return Size;
 	}
 	
-	float angle_min = -3.14159;
-        float angle_max = 3.14159;
-        float angle_increment = 0.0043633231f;
+	float angle_min = 0;
+        float angle_max = 2 * M_PI;
+        float angle_increment = 0.0162356209f;
         float scan_time = 0;
-        float time_increment = 0.0004022129;
-        float range_min = 0.0099999998f;
-        float range_max = 8.0;
+        float time_increment = 0;
+        float range_min = 0.1f;
+        float range_max = 10.0;
         float ranges[Size] = { 0 };
         float intensities[Size] = { 0 };
 	
 };
 
-typedef struct LidarScan<1440> LaserScan;
+typedef struct LidarScan<380> LaserScan;
 
 }
 
