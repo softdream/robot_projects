@@ -13,6 +13,11 @@
 
 #include "map_manage.h"
 
+#include "data_transport.h"
+
+// global data
+transport::Sender scan_sender( "192.168.137.211", 2337 );
+
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
 {
         container.clear();
@@ -57,11 +62,11 @@ int main()
 
 	// print the map information
 	slam.printMapInfo();
-	cv::Mat image = cv::Mat::zeros(slam.getSizeX(), slam.getSizeY(), CV_8UC3);
+	cv::Mat image = cv::Mat(slam.getSizeX(), slam.getSizeY(), CV_8UC1, cv::Scalar(125));
 	cv::imshow("map", image);
 
 	simulation::Simulation simulation;
-	simulation.openSimulationFile( "/home/riki/Test/robot_projects/slam_simu/test_data/laser_test_data2.txt" );
+	simulation.openSimulationFile( "/home/riki/Test/robot_projects/robot_projects/slam_simu/test_data/laser_test_data2.txt" );
 
 	Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 	
@@ -76,7 +81,7 @@ int main()
 		laserData2Container( scan, scan_container );
 	
 		std::cout<<"frame count: "<<simulation.getFrameCount()<<std::endl;
-		displayScan( scan_container );
+		//displayScan( scan_container );
 
 		if( simulation.getFrameCount() <= 10  ){
 			slam.processTheFirstScan( robot_pose, scan_container );
@@ -105,6 +110,12 @@ int main()
 				key_poses.insert( std::make_pair( simulation.getFrameCount(), robot_pose ) );
 			
 				slam.displayMap( image );
+
+				// send map
+				std::vector<unsigned char> encode_data;
+				cv::imencode(".jpg", image, encode_data);
+				int ret  = scan_sender.send( encode_data );
+				std::cout<<"map send : "<<ret<<std::endl;
 			}
 		}
 		
