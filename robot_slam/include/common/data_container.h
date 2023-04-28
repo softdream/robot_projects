@@ -55,7 +55,7 @@ public:
 	}
 
 	
-	const int getSize() const	
+	int getSize() const	
 	{
 		return data_vec_.size();
 	}
@@ -77,6 +77,7 @@ private:
 };
 
 using ScanContainer = DataContainer<Eigen::Vector2f>;
+using ScanContainerD = DataContainer<Eigen::Vector2d>;
 
 }
 
