@@ -26,7 +26,12 @@ void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& 
         for ( size_t i = 0; i < scan.size(); i ++ ) {
                 auto dist = scan.ranges[i];
                 if ( dist >= 0.1 && dist < 10.0 ) {
-                        container.addData( Eigen::Vector2f( ::cos( angle ) * dist, ::sin( angle ) * dist ) );
+			auto pt = Eigen::Vector2f( ::cos( angle ) * dist, ::sin( angle ) * dist );
+			Eigen::Matrix2f R;
+			R << ::cos( M_PI ), -::sin( M_PI ),
+			     ::sin( M_PI ),  ::cos( M_PI );
+	
+                        container.addData( R * pt );
                 }
 
                 angle += scan.angle_increment;
