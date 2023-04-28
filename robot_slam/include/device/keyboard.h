@@ -51,12 +51,12 @@ public:
 
 		std::cout<<"Open the KeyBoard Device !"<<std::endl;
 
-		Event key_event;
+		epoll::Event key_event;
 	        key_event.fd = key_fd;
         	key_event.event |= EPOLLIN;
 	        key_event.event |= EPOLLET;
         	key_event.arg = NULL;
-	        FUNC callback = std::bind( &Keyboard::keyCallBack, this, _1, _2 );
+	        epoll::FUNC callback = std::bind( &Keyboard::keyCallBack, this, _1, _2 );
         	key_event.callback = callback;
 
 	        event_base.addEvent( key_event );
@@ -155,7 +155,7 @@ private:
 private:
 	int key_fd = -1;
 	
-	EpollEvent event_base;
+	epoll::EpollEvent event_base;
 
 	bool pressed_flag = false;
 

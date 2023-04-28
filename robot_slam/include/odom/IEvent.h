@@ -6,6 +6,9 @@
 
 #include <functional>
 
+namespace epoll
+{
+
 typedef std::function<void*(int, void*)> FUNC;
 
 typedef struct{
@@ -30,7 +33,7 @@ public:
 	}
 };
 
-
+}
 
 
 #endif

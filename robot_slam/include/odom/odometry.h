@@ -1,7 +1,6 @@
 #ifndef __ODOMETRY_H
 #define __ODOMETRY_H
 
-#include "log.h"
 #include "ekf_fusion.h"
 #include "EpollEvent.h"
 
@@ -78,14 +77,14 @@ public:
 	{
 		uart_ = new uart::Uart();
 	
-		Event odom_event;
+		epoll::Event odom_event;
 		odom_event.fd = uart_->getFd();
 		odom_event.event |= EPOLLIN;
                 odom_event.event |= EPOLLERR;
                 odom_event.event |= EPOLLET;
                 odom_event.arg = NULL;
 		
-		FUNC recv_cb = std::bind( &Odometry::odomRecvCallback, this, _1, _2 );
+		epoll::FUNC recv_cb = std::bind( &Odometry::odomRecvCallback, this, _1, _2 );
 		odom_event.callback = recv_cb;
 
 		event_base_.addEvent( odom_event );
@@ -281,7 +280,7 @@ private:
 
 private:
 	// 
-	EpollEvent event_base_;
+	epoll::EpollEvent event_base_;
 	uart::Uart *uart_ = nullptr;
 
 	// ekf fusion

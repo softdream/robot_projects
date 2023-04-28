@@ -148,18 +148,24 @@ public:
 		for( int i = 0; i < grid_map_->getSizeX(); i ++ ){
 			for( int j = 0; j < grid_map_->getSizeY(); j ++ ){
 				if( grid_map_->isCellFree( i, j ) ){
-                                	cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
+					if ( image.type() == CV_8UC3 )
+                                		cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
+					else if ( image.type() == CV_8UC1 ) 
+						image.at<uchar>( i, j ) = 255;
 				}
 				else if( grid_map_->isCellOccupied( i, j ) ){
 					occupiedCount ++;
-					cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
+					if ( image.type() == CV_8UC3 )
+						cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
+					else if ( image.type() == CV_8UC1 )
+                                                image.at<uchar>( i, j ) = 0;
 				}
 			}
 		}
 	
-		Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( last_map_update_pose_ );
-		cv::Point2d pose_img( pose[0], pose[1] );
-		cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
+		//Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( last_map_update_pose_ );
+		//cv::Point2d pose_img( pose[0], pose[1] );
+		//cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
 
 		cv::imshow( "map", image );
 	}
@@ -252,8 +258,8 @@ private:
 	grid::OccupiedGridMap<T> *grid_map_;
 
 	// ------------ Parameters -------------- //
-	DataType minDistanceDiffForMapUpdate = 0.4;
-	DataType minAngleDiffForMapUpdate = 0.9;
+	DataType minDistanceDiffForMapUpdate = 0.2;
+	DataType minAngleDiffForMapUpdate = 0.035;
 	
 	Eigen::Matrix<DataType, 3, 3> covarince_matrix_;
 	Eigen::Matrix<DataType, 3, 1> last_scan_match_pose_;

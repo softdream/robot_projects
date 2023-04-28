@@ -6,6 +6,9 @@
 #include <map>
 #include "IEvent.h"
 
+namespace epoll
+{
+
 class EpollEvent : public IEvent 
 {
 public:
@@ -40,6 +43,7 @@ private:
 	std::map<int, Event> events;
 };
 
+}
 
 #endif 
 

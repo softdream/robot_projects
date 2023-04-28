@@ -1,5 +1,8 @@
 #include "EpollEvent.h"
 
+namespace epoll
+{
+
 int EpollEvent::addEvent( const Event &event )
 {
         struct epoll_event epollEvent;
@@ -56,5 +59,7 @@ int EpollEvent::dispatcher()
                 }
         }
         return true;
+}
+
 }
 

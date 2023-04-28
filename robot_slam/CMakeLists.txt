@@ -33,12 +33,11 @@ LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/include	
 	${CMAKE_SOURCE_DIR}/include/common
-	${CMAKE_SOURCE_DIR}/include/lidar
 	${CMAKE_SOURCE_DIR}/include/lidar/lidar_include
+	${CMAKE_SOURCE_DIR}/include/lidar
 	${CMAKE_SOURCE_DIR}/include/odom
 	${CMAKE_SOURCE_DIR}/include/slam
 	${CMAKE_SOURCE_DIR}/include/device
-	${CMAKE_SOURCE_DIR}/include/log
 	${CMAKE_SOURCE_DIR}/src
 )
 

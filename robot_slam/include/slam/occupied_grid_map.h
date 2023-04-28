@@ -3,7 +3,7 @@
 
 #include "grid_map_base.h"
 
-#include "dataContainer.h"
+#include "data_container.h"
 
 namespace grid
 {
