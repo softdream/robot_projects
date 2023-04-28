@@ -18,11 +18,10 @@ odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero(
 odom::Odometry<float>::Vector3 pre_odom_pose = odom_pose; // 5. previous odom pose
 
 Eigen::Vector3f robot_pose = Eigen::Vector3f::Zero(); // 6. robot pose
-Eigen::Vector3f pre_robot_pose = Eigen::Vector3f::Zero(); // 7. previous robot pose
 
-slam::SlamProcessor<float> slam_processor; // 8. slam processor
+slam::SlamProcessor<float> slam_processor; // 7. slam processor
 
-bool is_initialized = false; // 9. slam initialized flag
+bool is_initialized = false; // 8. slam initialized flag
 
 // ------------------------------------------------------------------------------------------- //
 
