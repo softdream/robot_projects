@@ -1,0 +1,155 @@
+#ifndef __TIME_SYNCHRONIZE_H
+#define __TIME_SYNCHRONIZE_H
+
+#include <iostream>
+#include <chrono>
+
+namespace time_manage
+{
+
+class TimeManage
+{
+public:
+	static long getTimeStamp()
+	{
+		std::chrono::steady_clock::time_point stamp = std::chrono::steady_clock::now();
+		return  std::chrono::time_point_cast<std::chrono::milliseconds>( stamp ).time_since_epoch().count();
+	}
+};
+
+template<typename T, int Size = 10>
+class Queue
+{
+public:
+        Queue()
+        {
+                buffer_ = new T[Size];
+        }
+
+        ~Queue()
+        {
+                delete[] buffer_;
+        }
+
+        bool isEmpty() const
+        {
+                return front_ == rear_;
+        }
+
+        bool isFull() const
+        {
+                return ( ( rear_ + 1 ) % Size ) == front_;
+        }
+
+        bool push( const T &elem )
+        {
+                if( isFull() ){
+                        std::cerr << "Queue is full !" << std::endl;
+                        return false;
+                }
+
+                buffer_[rear_] = elem;
+                rear_ = ( rear_ + 1 ) % Size;
+
+                return true;
+        }
+
+	bool pop()
+        {
+                if (isEmpty()) {
+                        std::cerr << "Queue is empty !" << std::endl;
+                        return false;
+                }
+
+                front_ = (front_ + 1) % Size;
+
+                return true;
+        }
+
+	/*const T find( const typename T::value_type stamp )
+	{
+		if ( stamp >= buffer_[rear_](0) ) {
+			return buffer_[rear_];
+		}
+
+		if ( stamp <= buffer_[front_](0) ) {
+			return buffer_[front_];
+		}
+	
+		for ( int i = front_; i < rear_; i ++ ) {
+			if ( stamp > buffer_[i](0) && stamp < buffer_[i + 1](0) ) {
+				auto scale1 = ( buffer_[i + 1](0) - stamp ) / ( buffer_[i + 1](0) - buffer_[i](0) );
+				auto scale2 = ( stamp - buffer_[i](0) ) / ( buffer_[i + 1](0) - buffer_[i](0) );
+
+				T ret = T::Zero();
+				ret(0) = stamp;
+				for ( int row = 1; row < ret.size(); row ++ )  {
+					ret(row) = scale1 * buffer_[i](row) + scale2 * buffer_[i + 1](row);
+				}
+
+				return ret;
+			}
+		}
+	}*/
+	
+        const T find( const typename T::value_type time_stamp )
+        {
+                typename T::value_type dist = std::numeric_limits<typename T::value_type>::max();
+                T ret;
+                for( int i = front_; i <= rear_; i ++ ){
+                      std::cout<<"buffer["<<i<<"] : "<<std::endl<<buffer_[i]<<std::endl;
+                        if ( std::abs( time_stamp - buffer_[i](0) ) <= dist ){
+                                dist = std::abs( time_stamp - buffer_[i](0) );
+                                ret = buffer_[i];
+
+                //              std::cout<<"dist ["<<i<<"] = "<<dist<<std::endl;
+                        }
+                }
+
+                return ret;
+        }
+
+
+private:
+        T* buffer_ = nullptr;
+        int front_ = 0;
+        int rear_ = 0;
+};
+
+
+template<typename T>
+class Synchronize
+{
+public:
+
+	Synchronize()
+	{
+
+	}
+
+	~Synchronize()
+	{
+
+	}
+
+	void addData( const T& elem )
+	{
+		if ( !que_.isFull() ) que_.push( elem );
+		else {
+			que_.pop();
+			que_.push( elem );
+		}
+	}
+
+	const T getSynchronizedData( const typename T::value_type stamp )
+	{
+		return que_.find( stamp );	
+	}
+	
+private:
+	Queue<T> que_;
+};
+
+}
+
+#endif
