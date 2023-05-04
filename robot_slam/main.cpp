@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "lidar_drive.h"
 #include "slam_process.h"
+#include "time_synchronize.h"
 
 #include <thread>
 #include <chrono>
@@ -13,15 +14,17 @@ odom::Odometry<float> odometry; // 1. odometry
 sensor::ScanContainer scan_container; // 2. scan container
 long scan_frame_cnt = 0; // 3. scan frame counter
 
-odom::Odometry<float>::Vector3 odom_pose = odom::Odometry<float>::Vector3::Zero(); // 4. odom_pose
+time_manage::Synchronize<Eigen::Vector4f> sync_list; // 4. time synchronization
 
-odom::Odometry<float>::Vector3 pre_odom_pose = odom_pose; // 5. previous odom pose
+odom::Odometry<float>::Vector3 pre_odom_pose = odom::Odometry<float>::Vector3::Zero(); // 5. previous odom pose
 
 Eigen::Vector3f robot_pose = Eigen::Vector3f::Zero(); // 6. robot pose
 
 slam::SlamProcessor<float> slam_processor; // 7. slam processor
 
 bool is_initialized = false; // 8. slam initialized flag
+
+cv::Mat map_image = cv::Mat(slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125)); // 9. global map image
 
 // ------------------------------------------------------------------------------------------- //
 
@@ -79,7 +82,11 @@ void odometryCallback( const odom::Odometry<float>::Vector3& pose )
         //std::cout<<"odometry call back function : "<<std::endl;
         std::cout<<"odom_pose : "<<pose.transpose()<<std::endl;
 #endif
-	odom_pose = pose; // update the odom pose	
+	//odom_pose = pose; // update the odom pose	
+
+	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
+
+	sync_list.addData( Eigen::Vector4f( stamp, pose[0], pose[1], pose[2] ) );
 
         // send to 
         geometry::Pose2f pose_2( pose[0], pose[1], pose[2] );
@@ -116,11 +123,14 @@ void lidarCallback( const sensor::LaserScan& scan )
         std::cout<<std::endl;
 #endif
 
+	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
+
         Utils::laserData2Container( scan, scan_container );
         Utils::displayScan( scan_container );
 	
 	// caculate odometry delta pose
 	Eigen::Vector3f odom_delta_pose = Eigen::Vector3f::Zero();
+	Eigen::Vector3f odom_pose = sync_list.getSynchronizedData( stamp ).tail<3>();
 
 	if ( !is_initialized ) {
 		pre_odom_pose = odom_pose;
