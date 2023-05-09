@@ -142,7 +142,7 @@ public:
 		return is_key_frame_;
 	}
 
-	void displayMap( cv::Mat &image )
+	void displayMap( cv::Mat &image, const bool display_flag = false )
 	{
 		int occupiedCount = 0;
 		for( int i = 0; i < grid_map_->getSizeX(); i ++ ){
@@ -167,7 +167,8 @@ public:
 		//cv::Point2d pose_img( pose[0], pose[1] );
 		//cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
 
-		cv::imshow( "map", image );
+		if ( display_flag )
+			cv::imshow( "map", image );
 	}
 	
 	void displayOdometry( cv::Mat &image, 

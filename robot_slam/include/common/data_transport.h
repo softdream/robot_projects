@@ -300,7 +300,7 @@ public:
 	}
 
 	// SFINAE
-	template<typename T, typename = typename std::enable_if<std::is_same<T, std::vector<T, std::allocator<T>>>::value>::type>
+	template<typename T, typename = typename std::enable_if<!std::is_same<T, std::vector<T, std::allocator<T>>>::value>::type>
 	int send( T&& data )
 	{
 		return this->write( (char *)&data, sizeof( data ), port_, ip_ );

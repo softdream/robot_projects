@@ -7,6 +7,8 @@
 
 #include "keyboard.h"
 
+#include "data_transport.h"
+
 #include <thread>
 #include <chrono>
 
@@ -27,6 +29,9 @@ bool is_initialized = false; // 8. slam initialized flag
 
 cv::Mat map_image = cv::Mat(slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125)); // 9. global map image
 
+transport::Sender odom_sender( "192.168.137.211", 2335 );
+transport::Sender scan_sender( "192.168.137.211", 2336 );
+transport::Sender map_sender( "192.168.137.211", 2337 );
 // ------------------------------------------------------------------------------------------- //
 
 void keyWPressed()
@@ -91,7 +96,7 @@ void odometryCallback( const odom::Odometry<float>::Vector3& pose )
 
         // send to 
         geometry::Pose2f pose_2( pose[0], pose[1], pose[2] );
-        //odom_sender.send( pose_2 );
+        odom_sender.send( pose_2 ); // send the odometry data
 }
 
 // thread 2 : odometry 
@@ -123,11 +128,12 @@ void lidarCallback( const sensor::LaserScan& scan )
         }
         std::cout<<std::endl;
 #endif
+	//scan_sender.send( scan ); // send lidar scan data
 
 	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
 
         Utils::laserData2Container( scan, scan_container );
-        Utils::displayScan( scan_container );
+        //Utils::displayScan( scan_container );
 	
 	// caculate odometry delta pose
 	Eigen::Vector3f odom_delta_pose = Eigen::Vector3f::Zero();
@@ -161,7 +167,13 @@ void lidarCallback( const sensor::LaserScan& scan )
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
 	
 		if ( slam_processor.isKeyFrame() ) {  // key pose
-			
+			slam_processor.displayMap( map_image, false ); // update the map image		
+			// send map
+                        std::vector<unsigned char> encode_data;
+                        cv::imencode(".jpg", map_image, encode_data);
+                        int ret  = map_sender.send( encode_data ); // send the map image data
+                        std::cout<<"map send : "<<ret<<std::endl;
+
 		}
 	}
 	
