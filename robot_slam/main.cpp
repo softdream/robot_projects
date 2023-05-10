@@ -1,5 +1,4 @@
 #include "odometry.h"
-#include "data_transport.h"
 #include "utils.h"
 #include "lidar_drive.h"
 #include "slam_process.h"
@@ -10,7 +9,6 @@
 #include "data_transport.h"
 
 #include <thread>
-#include <chrono>
 
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
 odom::Odometry<float> odometry; // 1. odometry
@@ -29,10 +27,11 @@ bool is_initialized = false; // 8. slam initialized flag
 
 cv::Mat map_image = cv::Mat(slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125)); // 9. global map image
 
-transport::Sender odom_sender( "192.168.137.211", 2335 );
-transport::Sender scan_sender( "192.168.137.211", 2336 );
-transport::Sender map_sender( "192.168.137.211", 2337 );
+transport::Sender odom_sender( "192.168.3.27", 2335 );
+transport::Sender scan_sender( "192.168.3.27", 2336 );
+transport::Sender map_sender( "192.168.3.27", 2337 );
 // ------------------------------------------------------------------------------------------- //
+
 
 void keyWPressed()
 {
@@ -128,7 +127,7 @@ void lidarCallback( const sensor::LaserScan& scan )
         }
         std::cout<<std::endl;
 #endif
-	//scan_sender.send( scan ); // send lidar scan data
+	scan_sender.send( scan ); // send lidar scan data
 
 	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
 
@@ -178,6 +177,7 @@ void lidarCallback( const sensor::LaserScan& scan )
 	}
 	
 	
+	
 	scan_frame_cnt ++;
 }
 
@@ -196,11 +196,11 @@ int main()
 
 	std::thread keyboard_control_thread( keyboardControl );
         std::thread odometry_thread( odometryThread );
-	std::thread lidar_thread( lidarThread );
+//	std::thread lidar_thread( lidarThread );
 
         keyboard_control_thread.join();
         odometry_thread.join();
-	lidar_thread.join();
+//	lidar_thread.join();
 
 
         while(1){

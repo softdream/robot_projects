@@ -83,11 +83,11 @@ int main()
 	std::cout<<"---------------------- DESKTOP ROBORT LOCALIZATION --------------------"<<std::endl;
 
 	std::thread keyboard_control_thread( keyboardControl );
-	std::thread odometry_thread( odometryThread );
+	//std::thread odometry_thread( odometryThread );
 
 
 	keyboard_control_thread.join();
-	odometry_thread.join();
+	//odometry_thread.join();
 
 
 	while(1){
