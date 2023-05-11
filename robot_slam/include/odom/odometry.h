@@ -126,7 +126,7 @@ public:
 
 			// millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm
 			if ( type == measurement ) {
-				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
+				//std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
 				if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
 				else is_static_ = false;

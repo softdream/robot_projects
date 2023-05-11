@@ -16,7 +16,7 @@
 #include "data_transport.h"
 
 // global data
-transport::Sender scan_sender( "192.168.137.211", 2337 );
+transport::Sender scan_sender( "192.168.3.27", 2337 );
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
 {
@@ -71,7 +71,7 @@ int main()
 	cv::imshow("map", image);
 
 	simulation::Simulation simulation;
-	simulation.openSimulationFile( "/home/riki/Test/robot_projects/robot_projects/slam_simu/test_data/laser_test_data2.txt" );
+	simulation.openSimulationFile( "/home/sunrise/workstation/robot_projects/robot_projects/slam_simu/test_data/laser_test_data2.txt" );
 
 	Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 	

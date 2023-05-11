@@ -46,7 +46,6 @@ LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib)
 
 # add source files
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src src_files)
-AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src/odom src_files)
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} src_files)
 
 # generate executable file

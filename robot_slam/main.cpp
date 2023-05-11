@@ -155,23 +155,24 @@ void lidarCallback( const sensor::LaserScan& scan )
 	}
 	else {
 		if ( odom_delta_pose.norm() < 0.1 ) {
-			robot_pose += odom_delta_pose; // update the robot pose use odometry data
+			//robot_pose += odom_delta_pose; // update the robot pose use odometry data
 		}
 		else {
-			std::cerr<<"odometry data error : delta pose is too large !"<<std::endl;
+			//std::cerr<<"odometry data error : delta pose is too large !"<<std::endl;
 		}
 
 		// pose estimated by scan to map optimization
 		slam_processor.update( robot_pose, scan_container );
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
-	
+		std::cout<<"robot pose : "<<robot_pose.transpose()<<std::endl;
+
 		if ( slam_processor.isKeyFrame() ) {  // key pose
 			slam_processor.displayMap( map_image, false ); // update the map image		
 			// send map
                         std::vector<unsigned char> encode_data;
                         cv::imencode(".jpg", map_image, encode_data);
                         int ret  = map_sender.send( encode_data ); // send the map image data
-                        std::cout<<"map send : "<<ret<<std::endl;
+                        std::cout<<"map send ==================  "<<ret<<std::endl;
 
 		}
 	}
@@ -193,14 +194,16 @@ void lidarThread()
 int main()
 {
 	std::cout<<"---------------------- ROBOT SLAM TEST --------------------"<<std::endl;
+	
+	slam_processor.printMapInfo();
 
 	std::thread keyboard_control_thread( keyboardControl );
         std::thread odometry_thread( odometryThread );
-//	std::thread lidar_thread( lidarThread );
+	std::thread lidar_thread( lidarThread );
 
         keyboard_control_thread.join();
         odometry_thread.join();
-//	lidar_thread.join();
+	lidar_thread.join();
 
 
         while(1){
