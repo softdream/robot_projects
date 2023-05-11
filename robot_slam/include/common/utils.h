@@ -33,21 +33,21 @@ public:
 }
 
 	static void displayScan( sensor::ScanContainer& container, const float scale = 100 )
-{
-        cv::Mat image = cv::Mat::zeros( 800, 800, CV_8UC3 );
+	{
+        	cv::Mat image = cv::Mat::zeros( 800, 800, CV_8UC3 );
 
-        cv::line( image, cv::Point( 400, 0 ), cv::Point( 400, 800 ), cv::Scalar( 0, 255, 0 ), 2 );
-        cv::line( image, cv::Point( 0, 400 ), cv::Point( 800, 400 ), cv::Scalar( 255, 0, 0 ), 2 );
+	        cv::line( image, cv::Point( 400, 0 ), cv::Point( 400, 800 ), cv::Scalar( 0, 255, 0 ), 2 );
+        	cv::line( image, cv::Point( 0, 400 ), cv::Point( 800, 400 ), cv::Scalar( 255, 0, 0 ), 2 );
 
-        for ( size_t i = 0; i < container.getSize(); i ++ ) {
-                auto pt = container.getIndexData( i );
-                cv::Point2f point( pt(0) * scale + 400, pt(1) * scale + 400 );
-                cv::circle( image, point, 3, cv::Scalar( 0, 0, 255 ), -1 );
-        }
+	        for ( size_t i = 0; i < container.getSize(); i ++ ) {
+        	        auto pt = container.getIndexData( i );
+                	cv::Point2f point( pt(0) * scale + 400, pt(1) * scale + 400 );
+	                cv::circle( image, point, 3, cv::Scalar( 0, 0, 255 ), -1 );
+        	}
 
-        cv::imshow( "scan", image );
-        cv::waitKey(5);
-}
+	        cv::imshow( "scan", image );
+        	cv::waitKey(5);
+	}
 
 
 };

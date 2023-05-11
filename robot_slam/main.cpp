@@ -32,6 +32,12 @@ transport::Sender scan_sender( "192.168.3.27", 2336 );
 transport::Sender map_sender( "192.168.3.27", 2337 );
 // ------------------------------------------------------------------------------------------- //
 
+void sendMapImage()
+{
+	std::vector<unsigned char> encode_data;
+        cv::imencode(".jpg", map_image, encode_data);
+        map_sender.send( encode_data ); // send the map image data
+}
 
 void keyWPressed()
 {
@@ -149,44 +155,34 @@ void lidarCallback( const sensor::LaserScan& scan )
 	}
 
 	// slam process
-	if ( scan_frame_cnt <= 10 ) { // initialize the map
+	if ( scan_frame_cnt <= 10 ) { // initialize the map using previous 10 frames
 		slam_processor.processTheFirstScan( robot_pose, scan_container );
-		
+	
+		if ( scan_frame_cnt == 10 ) {
+			sendMapImage(); // send initialized map
+		}	
 	}
 	else {
 		if ( odom_delta_pose.norm() < 0.1 ) {
-<<<<<<< HEAD
-			//robot_pose += odom_delta_pose; // update the robot pose use odometry data
-=======
 			robot_pose += odom_delta_pose; // update the robot pose by odometry data
->>>>>>> 26f8a46886874f5199fb08d8c7dcc02dcb1ed954
 		}
 		else {
-			//std::cerr<<"odometry data error : delta pose is too large !"<<std::endl;
+			std::cerr<<"odometry data error : delta pose is too large !"<<std::endl;
 		}
 
 		// pose estimated by scan to map optimization
 		slam_processor.update( robot_pose, scan_container );
-<<<<<<< HEAD
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
 		std::cout<<"robot pose : "<<robot_pose.transpose()<<std::endl;
 
-=======
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose by lidar data
 	
->>>>>>> 26f8a46886874f5199fb08d8c7dcc02dcb1ed954
 		if ( slam_processor.isKeyFrame() ) {  // key pose
 			slam_processor.displayMap( map_image, false ); // update the map image		
 			// send map
-                        std::vector<unsigned char> encode_data;
-                        cv::imencode(".jpg", map_image, encode_data);
-                        int ret  = map_sender.send( encode_data ); // send the map image data
-                        std::cout<<"map send ==================  "<<ret<<std::endl;
-
+			sendMapImage();
 		}
 	}
-	
-	
 	
 	scan_frame_cnt ++;
 }
@@ -215,7 +211,7 @@ int main()
 	lidar_thread.join();
 
 
-        while(1){
+        while ( 1 ) {
 
         }
 

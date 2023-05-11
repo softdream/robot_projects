@@ -44,7 +44,7 @@ struct TimeManageData_
 template<typename T>
 using TimeManageData = TimeManageData_<T>;
 
-template<typename T, int SIZE = 10>
+template<typename T, int BUFFER_SIZE = 10>
 class Synchronize
 {
 public:
@@ -61,7 +61,7 @@ public:
 
 	void addData( const T& elem )
 	{
-		if ( que_.size() < SIZE ) {
+		if ( que_.size() < BUFFER_SIZE ) {
 			que_.push_back( elem );
 		}
 		else {
