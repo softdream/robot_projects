@@ -15,7 +15,7 @@ odom::Odometry<float> odometry; // 1. odometry
 sensor::ScanContainer scan_container; // 2. scan container
 long scan_frame_cnt = 0; // 3. scan frame counter
 
-time_manage::Synchronize<Eigen::Vector4f> sync_list; // 4. time synchronization
+time_manage::Synchronize<time_manage::TimeManageData<Eigen::Vector3f>> sync_list; // 4. time synchronization
 
 odom::Odometry<float>::Vector3 pre_odom_pose = odom::Odometry<float>::Vector3::Zero(); // 5. previous odom pose
 
@@ -87,11 +87,9 @@ void odometryCallback( const odom::Odometry<float>::Vector3& pose )
         //std::cout<<"odometry call back function : "<<std::endl;
         std::cout<<"odom_pose : "<<pose.transpose()<<std::endl;
 #endif
-	//odom_pose = pose; // update the odom pose	
 
-	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
-
-	sync_list.addData( Eigen::Vector4f( stamp, pose[0], pose[1], pose[2] ) );
+	auto stamp = time_manage::TimeManage::getTimeStamp();
+	sync_list.addData( stamp, pose );
 
         // send to 
         geometry::Pose2f pose_2( pose[0], pose[1], pose[2] );
@@ -129,14 +127,14 @@ void lidarCallback( const sensor::LaserScan& scan )
 #endif
 	scan_sender.send( scan ); // send lidar scan data
 
-	float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
+	auto stamp = time_manage::TimeManage::getTimeStamp();
 
         Utils::laserData2Container( scan, scan_container );
         //Utils::displayScan( scan_container );
 	
 	// caculate odometry delta pose
 	Eigen::Vector3f odom_delta_pose = Eigen::Vector3f::Zero();
-	Eigen::Vector3f odom_pose = sync_list.getSynchronizedData( stamp ).tail<3>();
+	auto odom_pose = sync_list.getSynchronizedData( stamp );
 
 	if ( !is_initialized ) {
 		pre_odom_pose = odom_pose;
@@ -146,6 +144,8 @@ void lidarCallback( const sensor::LaserScan& scan )
 	else {
 		odom_delta_pose = odom_pose - pre_odom_pose;
 		std::cout<<"odom_delta_pose = "<<odom_delta_pose.transpose()<<std::endl;	
+
+		pre_odom_pose = odom_pose; // update the old value
 	}
 
 	// slam process
@@ -155,7 +155,11 @@ void lidarCallback( const sensor::LaserScan& scan )
 	}
 	else {
 		if ( odom_delta_pose.norm() < 0.1 ) {
+<<<<<<< HEAD
 			//robot_pose += odom_delta_pose; // update the robot pose use odometry data
+=======
+			robot_pose += odom_delta_pose; // update the robot pose by odometry data
+>>>>>>> 26f8a46886874f5199fb08d8c7dcc02dcb1ed954
 		}
 		else {
 			//std::cerr<<"odometry data error : delta pose is too large !"<<std::endl;
@@ -163,9 +167,14 @@ void lidarCallback( const sensor::LaserScan& scan )
 
 		// pose estimated by scan to map optimization
 		slam_processor.update( robot_pose, scan_container );
+<<<<<<< HEAD
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
 		std::cout<<"robot pose : "<<robot_pose.transpose()<<std::endl;
 
+=======
+		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose by lidar data
+	
+>>>>>>> 26f8a46886874f5199fb08d8c7dcc02dcb1ed954
 		if ( slam_processor.isKeyFrame() ) {  // key pose
 			slam_processor.displayMap( map_image, false ); // update the map image		
 			// send map
