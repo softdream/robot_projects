@@ -17,7 +17,7 @@
 
 #define ECHOFLAGS (ECHO | ECHOE | ECHOK | ECHONL)
 
-#define KEYBOARD_DEVICE_PATH "/dev/input/event1"
+#define KEYBOARD_DEVICE_PATH "/dev/input/event0"
 
 namespace keyboard
 {
@@ -56,10 +56,12 @@ public:
         	key_event.event |= EPOLLIN;
 	        key_event.event |= EPOLLET;
         	key_event.arg = NULL;
-	        epoll::FUNC callback = std::bind( &Keyboard::keyCallBack, this, _1, _2 );
+		epoll::FUNC callback = std::bind( &Keyboard::keyCallBack, this, _1, _2 );
         	key_event.callback = callback;
 
 	        event_base.addEvent( key_event );
+
+		return true;
 	}
 
 	void spin()
@@ -96,8 +98,7 @@ public:
 			}
 		}
 
-
-		
+		return nullptr;
 	}
 
 	template<typename ...Args>

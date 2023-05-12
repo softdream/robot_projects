@@ -74,7 +74,7 @@ public:
 	                bool hardError;
         	        LaserScan scan;
                 	if ( laser_->doProcessSimple(scan, hardError) ) {
-                        	std::cout<<"Scan recved : "<<scan.stamp<<", size : "<<scan.points.size()<<", frequency : "<<1.0 / scan.config.scan_time<<std::endl;
+//                        	std::cout<<"Scan recved : "<<scan.stamp<<", size : "<<scan.points.size()<<", frequency : "<<1.0 / scan.config.scan_time<<std::endl;
                 	
 				T scan_data;
 				//scan_data.angle_min = -M_PI;

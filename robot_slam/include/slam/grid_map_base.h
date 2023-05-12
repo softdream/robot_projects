@@ -263,8 +263,8 @@ protected:
 	std::vector<CellType> map_array_;
 	GridCellOperateType<T> cell_operate_;
 	
-	int size_x_ = 1001;
-	int size_y_ = 1001;
+	int size_x_ = 501;
+	int size_y_ = 501;
 	DataType cell_length_ = 0.1;
 };
 

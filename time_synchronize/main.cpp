@@ -5,19 +5,21 @@
 
 #include <unistd.h>
 
-time_manage::Synchronize<Eigen::Vector2f> sync_list;
+time_manage::Synchronize<time_manage::TimeManageData<Eigen::Vector2f>> sync_list;
 
 void testThread1()
 {
 	float cnt = 0;
 
 	while ( 1 ) {
-		float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
-		Eigen::Vector2f vec( stamp, cnt ++ );
-		std::cout<<vec.transpose()<<std::endl;
+		auto stamp = time_manage::TimeManage::getTimeStamp();
+		Eigen::Vector2f data( cnt, cnt );
+		std::cout<<"thread 1 stamp : "<<stamp<<", data : "<<data.transpose()<<std::endl;
 		
-		sync_list.addData( vec );
+		sync_list.addData( stamp, data );
 		usleep( 50000 );
+		
+		cnt ++;
 	}
 }
 
@@ -26,10 +28,11 @@ void testThread2()
 	float cnt = 0;
 	
 	while ( 1 ) {
-		float stamp = static_cast<float>( time_manage::TimeManage::getTimeStamp() );
-		std::cout<<"stamp : "<<stamp<<std::endl;
+		auto stamp = time_manage::TimeManage::getTimeStamp();
 		auto ret = sync_list.getSynchronizedData( stamp );
-		std::cout<<"ret : "<<ret.transpose()<<std::endl;
+		std::cout<<"thread 2 stamp : "<<stamp<<", sync data : "<<ret.transpose()<<std::endl;
+	
+		std::cout<<std::endl;
 
 		usleep( 100000 );
 	}

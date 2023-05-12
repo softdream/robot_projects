@@ -17,7 +17,7 @@
 
 #define ECHOFLAGS (ECHO | ECHOE | ECHOK | ECHONL)
 
-#define KEYBOARD_DEVICE_PATH "/dev/input/event1"
+#define KEYBOARD_DEVICE_PATH "/dev/input/event0"
 
 namespace keyboard
 {

@@ -3,8 +3,13 @@
 #include "data_container.h"
 #include <opencv2/opencv.hpp>
 
+#include "data_transport.h"
+
+
 // -------- global data --------- //
 sensor::ScanContainer container;
+
+transport::Sender scan_sender( "192.168.3.27", 2336 );
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
 {
@@ -63,7 +68,9 @@ void lidarCallback( const sensor::LaserScan& scan )
 	std::cout<<std::endl;
 
 	laserData2Container( scan, container );
-	displayScan( container );
+	//displayScan( container );
+	//
+	scan_sender.send( scan ); // send lidar scan data
 }
 
 int main(int argc, char *argv[])
