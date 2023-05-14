@@ -5,6 +5,9 @@
 
 #include <cmath>
 
+
+//#define DEBUG
+
 namespace apf
 {
 
@@ -40,8 +43,11 @@ public:
 	
 		//Vector2 direction = ( target_pose - robot_pose ) / ( target_pose - robot_pose ).norm();
 		Vector2 direction = ( target_pose - robot_pose ).normalized();
+
+#ifdef DEBUG
 		std::cout<<"attraction direction = "<<direction.transpose()<<std::endl;	
 		std::cout<<"attraction vec = "<<( f_att_norm * direction ).transpose()<<std::endl<<std::endl;
+#endif
 
 		return f_att_norm * direction;
 	}
@@ -59,7 +65,10 @@ public:
 		Vector2 f_rep_total = Vector2::Zero();
 		for( int i = 0; i < obstacles.getSize(); i ++ ){
 			DataType dist = distance( robot_pose, obstacles[i] );
+
+#ifdef DEBUG
 			std::cout<<"dist repulsion "<<i<<" : "<<dist<<std::endl;
+#endif
 
 			DataType f_rep1_norm = 0.0;
 			DataType f_rep2_norm = 0.0;
