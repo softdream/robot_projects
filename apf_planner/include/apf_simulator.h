@@ -42,7 +42,7 @@ public:
 	void initMap()
 	{
 		simulation::Simulation simu;
-		simu.openSimulationFile( "/groupdata/share/ddf/Test/apf/apf_planner/test_data/laser_test_data2.txt" );
+		simu.openSimulationFile( "/home/riki/Test/robot_projects/robot_projects/apf_planner/test_data/laser_test_data2.txt" );
 		sensor::LaserScan scan;
                 sensor::ScanContainer scan_container;
 
@@ -50,9 +50,18 @@ public:
 
 		Utils::laserData2Container( scan, scan_container );
 
+		Vector2 pre_pt = Vector2::Zero();
 		for ( int i = 0; i < scan_container.getSize(); i ++ ) {
 			auto pt = scan_container.getIndexData( i );
-			obstacles.addObstacle( pt );
+			if ( i == 0 ) {
+				pre_pt = pt;
+				obstacles.addObstacle( pt );
+			}	
+			if ( ( pt - pre_pt ).norm() > 0.3 ) {
+				obstacles.addObstacle( pt );
+				pre_pt = pt;
+			}
+			//obstacles.addObstacle( pt );
 		}
 
 		drawObstacles();
@@ -88,7 +97,7 @@ public:
 		// update the robot pose
 		//Vector2 new_pose = robot_pose + f_total;
 		///robot_pose = new_pose;		
-		robot_pose += f_total.normalized() * 0.02;
+		robot_pose += f_total.normalized() * 0.1;
 
 		cv::imshow("map", map);
                 cv::waitKey(0);
