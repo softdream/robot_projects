@@ -196,6 +196,14 @@ void lidarThread()
         m1c1_lidar.spin<sensor::LaserScan>( lidarCallback );
 }
 
+// thread 4 : path planner
+void pathPlannerThread()
+{
+	while ( 1 ) {
+		
+
+	}
+}
 
 int main()
 {
