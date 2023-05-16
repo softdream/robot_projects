@@ -8,6 +8,8 @@
 
 #include "data_transport.h"
 
+#include "apf_process.h"
+
 #include <thread>
 
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
@@ -199,9 +201,10 @@ void lidarThread()
 // thread 4 : path planner
 void pathPlannerThread()
 {
-	while ( 1 ) {
-		
+	apf::APFProcess<float> apf_processor;
 
+	while ( 1 ) {
+			
 	}
 }
 

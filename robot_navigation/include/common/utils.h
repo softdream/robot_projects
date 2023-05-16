@@ -49,7 +49,13 @@ public:
         	cv::waitKey(5);
 	}
 
+	template<typename T>
+	static void angleNormalize( T&& angle ) 
+	{
+		if ( angle >= M_PI ) angle -= 2 * M_PI;
 
+		if ( angle <= -M_PI ) angle += 2 * M_PI;
+	}
 };
 
 
