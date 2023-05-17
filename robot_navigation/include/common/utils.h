@@ -3,6 +3,7 @@
 
 #include "data_type.h"
 #include "data_container.h"
+#include "obstacles.h"
 
 #include <opencv2/opencv.hpp>
 
@@ -55,6 +56,39 @@ public:
 		if ( angle >= M_PI ) angle -= 2 * M_PI;
 
 		if ( angle <= -M_PI ) angle += 2 * M_PI;
+	}
+
+	template<typename T>
+	static const Eigen::Matrix<T, 2, 1> coordinateTransformMap2World( const Eigen::Vector2i& pt_in_map, const Eigen::Vector2i& map_center, const T cell_len ) 
+	{
+		return ( pt_in_map - map_center ).cast<T>() * cell_len;
+	}
+
+	template<typename T>
+	static void cvMap2ObstaclesVec( const cv::Mat& map, apf::Obstacles<T>& obs_vec, const Eigen::Vector2i& map_center, const T cell_len )
+	{
+		obs_vec.clearAll();
+
+		Eigen::Matrix<T, 2, 1> pre_pt = Eigen::Matrix<T, 2, 1>::Zero();
+		int cnt = 0;
+
+		for ( int i = 0; i < map.rows; i ++ ) {
+			for ( int j = 0; j < map.cols; j ++ ) {
+				if ( map.at<uchar>( j, i ) == 0 ) { // obstacles
+					auto pt = coordinateTransformMap2World( Eigen::Vector2i( i, j ), map_center, cell_len );
+					if ( cnt == 0 ) {
+						pre_pt = pt;
+						obs_vec.addObstacle( pt );
+					}		
+					else {
+						if ( ( pt - pre_pt ).norm() > 0.3 ) {
+							obs_vec.addObstacle( pt );
+							pre_pt = pt;
+						}
+					}
+				}
+			}
+		}
 	}
 };
 

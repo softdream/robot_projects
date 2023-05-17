@@ -57,7 +57,7 @@ void keyWReleased()
 void keyAPressd()
 {
         std::cout<<"key A pressed !"<<std::endl;
-        odometry.sendControlVector( 0.0, 1.5 );
+        odometry.sendControlVector( 0.0, 1.2 );
 }
 
 void keyAReleased()
@@ -69,7 +69,7 @@ void keyAReleased()
 void keyDPressed()
 {
         std::cout<<"key D pressed !"<<std::endl;
-        odometry.sendControlVector( 0.0, -1.5 );
+        odometry.sendControlVector( 0.0, -1.2 );
 }
 
 void keyDReleased()
@@ -202,9 +202,16 @@ void lidarThread()
 void pathPlannerThread()
 {
 	apf::APFProcess<float> apf_processor;
+	apf::Obstacles<float> obs_vec;
+		
+	Eigen::Vector2f target_pose = Eigen::Vector2f::Zero();
+	apf_processor.setTargetPose( target_pose );
 
 	while ( 1 ) {
-			
+		Utils::cvMap2ObstaclesVec( map_image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
+		Eigen::Vector2f robot_pose_2d( robot_pose[0], robot_pose[1] );
+		
+		auto target_yaw = apf_processor.runApfOnce( robot_pose_2d, obs_vec );		
 	}
 }
 
