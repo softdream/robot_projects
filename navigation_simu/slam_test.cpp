@@ -17,8 +17,11 @@
 
 #include "apf_process.h"
 
+#include "target_planner.h"
+
 #include <thread>
 #include <mutex>
+
 
 // -------------------------- GLOBAL DATA -------------------------- //
 slam::SlamProcessor<float> slam_processor;
@@ -27,6 +30,8 @@ Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 
 cv::Mat obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
 std::mutex mux;
+
+std::vector<Eigen::Vector2f> visited_robot_pose_vec;
 // ----------------------------------------------------------------- //
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
@@ -78,7 +83,6 @@ void drawObstacles( const apf::Obstacles<T>& obstacles, T scale = 50 )
 
 }
 
-
 void threadSlam()
 {
 	simulation::Simulation simulation;
@@ -102,6 +106,8 @@ void threadSlam()
 				mux.lock();
 				slam_processor.displayMap( image );
 				mux.unlock();
+
+				visited_robot_pose_vec.push_back( robot_pose.head(2) );
 			}
 		}
 		else {
@@ -127,12 +133,21 @@ void threadSlam()
 				obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
                 		drawObstacles( obs_vec );
 
-				cv::imshow( "obstacles", obs_map );
+				bool is_plan_completed = false;
+				auto planned_target_goal = TargetPlanner::generatePlannedTargetGoal( image, obs_vec, visited_robot_pose_vec, is_plan_completed );
+				visited_robot_pose_vec.push_back( planned_target_goal );
+
+				if ( is_plan_completed ) {
+					std::cout<<"Completed the Path Planning !"<<std::endl;	
+					break;
+				}
+
+				//cv::imshow( "obstacles", obs_map );
 
 			}
 		}
 		
-		cv::waitKey(100);
+		cv::waitKey(200);
 	}
 
 	simulation.closeSimulationFile();
