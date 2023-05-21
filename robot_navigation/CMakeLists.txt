@@ -40,6 +40,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/include/device
 	${CMAKE_SOURCE_DIR}/include/path_planner
 	${CMAKE_SOURCE_DIR}/include/path_tracking
+	${CMAKE_SOURCE_DIR}/include/target_planner
 	${CMAKE_SOURCE_DIR}/src
 )
 

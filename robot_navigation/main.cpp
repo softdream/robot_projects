@@ -10,6 +10,10 @@
 
 #include "apf_process.h"
 
+#include "target_planner.h"
+
+#include "pid_tracking.h"
+
 #include <thread>
 
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
@@ -28,6 +32,10 @@ slam::SlamProcessor<float> slam_processor; // 7. slam processor
 bool is_initialized = false; // 8. slam initialized flag
 
 cv::Mat map_image = cv::Mat(slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125)); // 9. global map image
+
+apf::Obstacles<float> obs_vec; // 10. obstacles container
+
+bool is_map_ready_flag = false; // 11. global map ready flag
 
 transport::Sender odom_sender( "192.168.3.27", 2335 );
 transport::Sender scan_sender( "192.168.3.27", 2336 );
@@ -134,6 +142,7 @@ void lidarCallback( const sensor::LaserScan& scan )
         }
         std::cout<<std::endl;
 #endif
+
 	scan_sender.send( scan ); // send lidar scan data
 
 	auto stamp = time_manage::TimeManage::getTimeStamp();
@@ -162,7 +171,12 @@ void lidarCallback( const sensor::LaserScan& scan )
 		slam_processor.processTheFirstScan( robot_pose, scan_container );
 	
 		if ( scan_frame_cnt == 10 ) {
+			slam_processor.displayMap( map_image, false ); // update the map image
 			sendMapImage(); // send initialized map
+
+			// get the obstacles distribution from the map image
+                        Utils::cvMap2ObstaclesVec( map_image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
+			is_map_ready_flag = true; 
 		}	
 	}
 	else {
@@ -184,10 +198,14 @@ void lidarCallback( const sensor::LaserScan& scan )
 			slam_processor.displayMap( map_image, false ); // update the map image		
 			// send map
 			sendMapImage();
+
+			// get the obstacles distribution from the map image
+			Utils::cvMap2ObstaclesVec( map_image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
 		}
 	}
 	
 	scan_frame_cnt ++;
+
 }
 
 // thread 3 : lidar process
@@ -202,16 +220,32 @@ void lidarThread()
 void pathPlannerThread()
 {
 	apf::APFProcess<float> apf_processor;
-	apf::Obstacles<float> obs_vec;
-		
-	Eigen::Vector2f target_pose = Eigen::Vector2f::Zero();
-	apf_processor.setTargetPose( target_pose );
+	pt::Tracking<float> tracking;
+
+	bool is_plan_completed = false;
+	std::vector<Eigen::Vector2f> visited_robot_pose_vec;
+
 
 	while ( 1 ) {
-		Utils::cvMap2ObstaclesVec( map_image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
-		Eigen::Vector2f robot_pose_2d( robot_pose[0], robot_pose[1] );
+		// if the global map is ready, can start the path planning
+		if ( is_map_ready_flag ) { 
+			Eigen::Vector2f target_pose = TargetPlanner::generatePlannedTargetGoal( map_image, obs_vec, visited_robot_pose_vec, is_plan_completed );
+
+			apf_processor.setTargetPose( target_pose );
+			is_map_ready_flag = false;
+		}	
+
+		Eigen::Vector2f robot_pose_xy( robot_pose[0], robot_pose[1] );
+		auto robot_pose_yaw = robot_pose[2];
 		
-		auto target_yaw = apf_processor.runApfOnce( robot_pose_2d, obs_vec );		
+		auto target_force_yaw = apf_processor.runApfOnce( robot_pose_xy, obs_vec );		
+		auto control_yaw = tracking.yawPidProcess( robot_pose_yaw, target_force_yaw.second );
+
+		float v = 0.15;
+
+		odometry.sendControlVector( v, control_yaw );
+
+		std::this_thread::sleep_for( std::chrono::milliseconds( 200 ) );
 	}
 }
 
