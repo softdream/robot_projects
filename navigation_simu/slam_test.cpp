@@ -82,19 +82,22 @@ void drawObstacles( const apf::Obstacles<T>& obstacles, T scale = 50 )
 void threadSlam()
 {
 	simulation::Simulation simulation;
-	simulation.openSimulationFile( "/groupdata/share/ddf/Test/robot_test/robot_projects/navigation_simu/test_data/laser_test_data2.txt" );
+	simulation.openSimulationFile( "/home/sunrise/workstation/robot_projects/robot_projects/navigation_simu/test_data/laser_test_data2.txt" );
 
 
 	int img_cnt = 0;
-	while( !simulation.endOfFile() ){
-		sensor::LaserScan scan;
+	int frame_cnt = 0;
+	//while( !simulation.endOfFile() ){
+	while ( frame_cnt < 400 ) {
+		frame_cnt ++;
+		/*sensor::LaserScan scan;
 		sensor::ScanContainer scan_container;
 	
 		simulation.readAFrameData( scan );
 		laserData2Container( scan, scan_container );
 	
 		std::cout<<"frame count: "<<simulation.getFrameCount()<<std::endl;
-		//displayScan( scan_container );
+		displayScan( scan_container );
 
 		if( simulation.getFrameCount() <= 10  ){
 			slam_processor.processTheFirstScan( robot_pose, scan_container );
@@ -123,7 +126,13 @@ void threadSlam()
 
 				//cv::imwrite( std::to_string( img_cnt ++ ) + ".jpg", image );
 				apf::Obstacles<float> obs_vec;
+				beforeTime = std::chrono::steady_clock::now();
 				Utils::cvMap2ObstaclesVec( image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
+				afterTime = std::chrono::steady_clock::now();
+				duration_millsecond = std::chrono::duration<double, std::milli>(afterTime - beforeTime).count();
+				std::cout<<"duration : " << duration_millsecond << "ms" << std::endl;
+
+
 				obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
                 		drawObstacles( obs_vec );
 
@@ -133,9 +142,10 @@ void threadSlam()
 		}
 		
 		cv::waitKey(100);
+		*/
 	}
 
-	simulation.closeSimulationFile();
+	//simulation.closeSimulationFile();
 }
 
 void pathPlanning()
@@ -163,15 +173,13 @@ int main()
 {
 	std::cout<<"---------------------- PATH PLANNING TEST ----------------------"<<std::endl;
 
-	std::thread t1( threadSlam );
+	//std::thread t1( threadSlam );
 	//std::thread t2( pathPlanning );
 
-	t1.join();
+	//t1.join();
 	//t2.join();
 
-	while ( 1 ) {
-	
-	}
+	threadSlam();
 
 	return 0;
 }
