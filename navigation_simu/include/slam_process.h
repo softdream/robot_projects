@@ -150,8 +150,10 @@ public:
 				if( grid_map_->isCellFree( i, j ) ){
 					if ( image.type() == CV_8UC3 )
                                 		cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
-					else if ( image.type() == CV_8UC1 ) 
+					else if ( image.type() == CV_8UC1 ) {
 						image.at<uchar>( i, j ) = 255;
+						//std::cout<<"( "<<i<<", "<<j<<" ) = "<<(int)image.at<uchar>( i, j )<<std::endl;
+					}
 				}
 				else if( grid_map_->isCellOccupied( i, j ) ){
 					occupiedCount ++;
