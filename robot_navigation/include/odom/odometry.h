@@ -223,6 +223,7 @@ public:
 	int sendControlVector( const DataType v, const DataType w )
 	{
 		Control u( v, w );	
+		std::cout<<"send control vector : ( "<<v<<", "<<w<<" )"<<std::endl;
 		return uart_->writeData( u );	
 	}
 
