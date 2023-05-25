@@ -160,7 +160,7 @@ public:
 					if ( image.type() == CV_8UC3 )
 						cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
 					else if ( image.type() == CV_8UC1 )
-                                                image.at<uchar>( i, j ) = 0;
+                                                image.at<uchar>( i, j ) = 1;
 				}
 			}
 		}

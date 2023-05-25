@@ -15,9 +15,9 @@
 
 #include "data_transport.h"
 
-#include "apf_process.h"
-
 #include "target_planner.h"
+
+#include "a_star.h"
 
 #include <thread>
 #include <mutex>
@@ -28,11 +28,13 @@ slam::SlamProcessor<float> slam_processor;
 cv::Mat image = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125));
 Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 
-cv::Mat obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
-std::mutex mux;
+cv::Mat costmap = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125));
 
-std::vector<Eigen::Vector2f> visited_robot_pose_vec;
-// ----------------------------------------------------------------- //
+cv::Mat costmap2 = cv::Mat( 800, 800, CV_8UC3, cv::Scalar( 255, 255, 255 ) );
+
+ planner::AStar<float> a_star;
+ bool planned_flag = false;
+ // ----------------------------------------------------------------- //
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
 {
@@ -73,14 +75,51 @@ void displayScan( sensor::ScanContainer& container, const float scale = 100 )
         cv::waitKey(5);
 }
 
-template<typename T>
-void drawObstacles( const apf::Obstacles<T>& obstacles, T scale = 50 )
-{
-	for( int i = 0; i < obstacles.getSize() - 1; i ++ ){
-        	cv::circle( obs_map, cv::Point( obstacles[i][0] * scale + 250, obstacles[i][1] * scale + 250 ), 15, cv::Scalar( 0, 0, 255 ), -1 );
-       	
-	}
 
+void map2CostMap( const cv::Mat& map, cv::Mat& cost_map )
+{
+	cost_map = map;
+
+	for ( int i = 0; i < cost_map.cols; i ++ ) {
+		for ( int j = 0; j < cost_map.rows; j ++ ) {
+			if ( cost_map.at<uchar>( i, j ) == 1 ) {
+				cv::circle( cost_map, cv::Point2d( j, i ), 3, cv::Scalar(0), -1 );
+			}
+		}
+	}
+}
+
+void map2CostMap2( const cv::Mat& map, cv::Mat& costmap2 )
+{
+	costmap2 = cv::Mat( 800, 800, CV_8UC3, cv::Scalar( 255, 255, 255 ) );
+
+	for ( int i = 0; i < map.cols; i ++ ) {
+		for ( int j = 0; j < map.rows; j ++ ) {
+		
+			if ( map.at<uchar>( i, j ) == 0 ) {
+				Eigen::Vector2f pt_map( i, j );
+			
+				Eigen::Vector2f pt_world = ( pt_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
+				cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 3, cv::Scalar( 255, 0, 0 ), -1 );
+			}
+		}
+	}
+}
+
+void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2i>& path, const Eigen::Vector2i& target )
+{
+	std::cout<<"path.size ====== == === "<<path.size()<<std::endl;
+	
+	Eigen::Vector2f dst_map( target[0], target[1] );
+        Eigen::Vector2f dst_world = ( dst_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
+	cv::circle( costmap2, cv::Point( dst_world[0] * 50 + 400, dst_world[1] * 50 + 400 ), 5, cv::Scalar( 0, 0, 255 ), -1 );
+
+	for ( const auto& pt : path ) {
+		Eigen::Vector2f pt_map( pt[0], pt[1] );
+		Eigen::Vector2f pt_world = ( pt_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
+
+		cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 3, cv::Scalar( 0, 255, 0 ), -1 );
+	} 
 }
 
 void threadSlam()
@@ -103,11 +142,10 @@ void threadSlam()
 		if( simulation.getFrameCount() <= 10  ){
 			slam_processor.processTheFirstScan( robot_pose, scan_container );
 			if( simulation.getFrameCount() == 10 ){
-				mux.lock();
 				slam_processor.displayMap( image );
-				mux.unlock();
 
-				visited_robot_pose_vec.push_back( robot_pose.head(2) );
+//				map2CostMap( image, costmap );
+//				cv::imshow( "costmap", costmap );
 			}
 		}
 		else {
@@ -123,27 +161,24 @@ void threadSlam()
                         std::cout<<"------------------"<<std::endl;
 
 			if( slam_processor.isKeyFrame() ){
-				mux.lock();
 				slam_processor.displayMap( image );
-				mux.unlock();
 
-				//cv::imwrite( std::to_string( img_cnt ++ ) + ".jpg", image );
-				apf::Obstacles<float> obs_vec;
-				Utils::cvMap2ObstaclesVec( image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
-				obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
-                		drawObstacles( obs_vec );
+				//cv::imshow( "map", image );
 
-				bool is_plan_completed = false;
-				auto planned_target_goal = TargetPlanner::generatePlannedTargetGoal( image, obs_vec, visited_robot_pose_vec, is_plan_completed );
-				visited_robot_pose_vec.push_back( planned_target_goal );
+				map2CostMap( image, costmap );
+				
+				//cv::imshow( "costmap", costmap );
 
-				if ( is_plan_completed ) {
-					std::cout<<"Completed the Path Planning !"<<std::endl;	
-					break;
-				}
+				a_star.setMap( costmap );
+				auto robot_pose_map = Eigen::Vector2i( robot_pose[0] * 10 + 250, robot_pose[1] * 10 + 250 );
+				Eigen::Vector2i target = TargetPlanner::generatePlannedTargetGoal( costmap, planned_flag );
+				a_star.findPath( robot_pose_map, target );
+				auto path = a_star.getPath();
 
-				//cv::imshow( "obstacles", obs_map );
-
+				map2CostMap2( image, costmap2 );
+				drawPath( costmap2, path, target );
+				cv::imshow( "costmap", costmap2 );
+				//cv::imwrite(std::to_string( img_cnt ++ ) + ".jpg", costmap);
 			}
 		}
 		
@@ -153,36 +188,14 @@ void threadSlam()
 	simulation.closeSimulationFile();
 }
 
-void pathPlanning()
-{
-	apf::APFProcess<float> apf_processor;
-	apf::Obstacles<float> obs_vec;
-
-	int img_cnt = 0;
-	while ( 1 ) {
-		mux.lock();
-		Utils::cvMap2ObstaclesVec( image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
-		mux.unlock();
-		std::cout<<"obs_vec.size() ============= "<<obs_vec.getSize()<<std::endl;
-	
-		obs_map = cv::Mat( 500, 500, CV_8UC3, cv::Scalar(255, 255, 255 ) );
-		drawObstacles( obs_vec );
-		//cv::imshow( "obstacles", obs_map );
-		//
-		cv::imwrite( std::to_string( img_cnt ++ ) + ".jpg", image );
-		cv::waitKey(200);
-	}
-}
 
 int main()
 {
 	std::cout<<"---------------------- PATH PLANNING TEST ----------------------"<<std::endl;
 
 	std::thread t1( threadSlam );
-	//std::thread t2( pathPlanning );
 
 	t1.join();
-	//t2.join();
 
 	while ( 1 ) {
 	
