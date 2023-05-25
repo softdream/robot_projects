@@ -20,9 +20,9 @@ namespace pt
 
 		Tracking()
 		{
-			yaw_pid = new PID<DataType>(0.4, 1, -1, 0.8, 0.5, 0.3);
-			y_pose_pid = new PID<DataType>(0.5, 2, -2, 0.3, 0.3, 0.3);
-			x_pose_pid = new PID<DataType>(0.5, 2, -2, 0.3, 0.3, 0.3);
+			yaw_pid = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.5, 0.3);
+			y_pose_pid = new PID<DataType>(0.2, 0.15, -0.15, 0.3, 0.3, 0.3);
+			x_pose_pid = new PID<DataType>(0.2, 0.15, -0.15, 0.3, 0.3, 0.3);
 		}
 
 		~Tracking()

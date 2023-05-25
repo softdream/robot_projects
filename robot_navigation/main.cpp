@@ -8,7 +8,12 @@
 
 #include "data_transport.h"
 
-#include "apf_process.h"
+//#include "apf_process.h"
+#include "a_star.h"
+
+#include "target_planner.h"
+
+#include "pid_tracking.h"
 
 #include <thread>
 
@@ -27,7 +32,11 @@ slam::SlamProcessor<float> slam_processor; // 7. slam processor
 
 bool is_initialized = false; // 8. slam initialized flag
 
-cv::Mat map_image = cv::Mat(slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125)); // 9. global map image
+cv::Mat map_image = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125) ); // 9. global map image
+
+cv::Mat cost_map_image = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125) ); // 10. global cost map image
+
+bool is_map_ready_flag = false; // 11. global map ready flag
 
 transport::Sender odom_sender( "192.168.3.27", 2335 );
 transport::Sender scan_sender( "192.168.3.27", 2336 );
@@ -134,6 +143,7 @@ void lidarCallback( const sensor::LaserScan& scan )
         }
         std::cout<<std::endl;
 #endif
+
 	scan_sender.send( scan ); // send lidar scan data
 
 	auto stamp = time_manage::TimeManage::getTimeStamp();
@@ -162,11 +172,17 @@ void lidarCallback( const sensor::LaserScan& scan )
 		slam_processor.processTheFirstScan( robot_pose, scan_container );
 	
 		if ( scan_frame_cnt == 10 ) {
+			slam_processor.displayMap( map_image, false ); // update the map image
 			sendMapImage(); // send initialized map
+
+			// generate costmap
+			Utils::map2CostMap( cost_map_image, cost_map_image );
+			is_map_ready_flag = true; 
+			std::cout<<"the map is ready now !!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
 		}	
 	}
 	else {
-		if ( odom_delta_pose.norm() < 0.1 ) {
+		if ( odom_delta_pose.norm() < 0.2 ) {
 			robot_pose += odom_delta_pose; // update the robot pose by odometry data
 		}
 		else {
@@ -177,6 +193,7 @@ void lidarCallback( const sensor::LaserScan& scan )
 		slam_processor.update( robot_pose, scan_container );
 		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
 		std::cout<<"robot pose : "<<robot_pose.transpose()<<std::endl;
+		
 		geometry::Pose2f pose_2( robot_pose[0], robot_pose[1], robot_pose[2] );
         	pose_sender.send( pose_2 ); // send the global pose of the robot
 	
@@ -184,10 +201,14 @@ void lidarCallback( const sensor::LaserScan& scan )
 			slam_processor.displayMap( map_image, false ); // update the map image		
 			// send map
 			sendMapImage();
+
+			// generate costmap
+			Utils::map2CostMap( cost_map_image, cost_map_image );
 		}
 	}
 	
 	scan_frame_cnt ++;
+
 }
 
 // thread 3 : lidar process
@@ -201,17 +222,58 @@ void lidarThread()
 // thread 4 : path planner
 void pathPlannerThread()
 {
-	apf::APFProcess<float> apf_processor;
-	apf::Obstacles<float> obs_vec;
-		
-	Eigen::Vector2f target_pose = Eigen::Vector2f::Zero();
-	apf_processor.setTargetPose( target_pose );
+
+	planner::AStar<float> a_star;
+
+	bool is_initialized = false;
+	std::vector<Eigen::Vector2f> visited_robot_pose_vec;
+        Eigen::Vector2i target_pose = Eigen::Vector2i::Zero();
+	bool is_plan_completed = false;
 
 	while ( 1 ) {
-		Utils::cvMap2ObstaclesVec( map_image, obs_vec, Eigen::Vector2i( 250, 250 ), 0.1f );
-		Eigen::Vector2f robot_pose_2d( robot_pose[0], robot_pose[1] );
+                usleep( 200000 );
+                std::cout<<"----------------------------- path planning ----------------------- "<<std::endl;
+
+		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
+
+                // if the global map is ready, can start the path planning
+                if ( !is_initialized  && is_map_ready_flag ) { 
+                 	target_pose = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );       
+                        //target_pose = Eigen::Vector2f( 0.7, 0.3 );
+                        std::cout<<"target pose ====================== "<<target_pose.transpose()<<std::endl;
+			// generate the path
+			//auto robot_pose_xy_map = Utils::coordinateTransformWorld2Map( robot_pose_xy, Eigen::Vector2i( 250, 250 ), 0.1 );
+
+			a_star.setMap( cost_map_image );
+			//a_star.findPath( robot_pose_xy_map, target_pose );
+                        
+                        is_initialized = true;  
+
+                        continue;
+                }       
+
+                if ( !is_map_ready_flag ) continue;
+	
+		// reached the goal
+                /*if ( ( target_pose - robot_pose_xy ).norm() < 0.2 ) {
+                        usleep( 100000 );
+                        odometry.sendControlVector( 0.0, 0.0 );
+                        std::cout<<"---------------------------------------- REACHED ---------------------------------"<<std::endl;
+
+                        //visited_robot_pose_vec.push_back( robot_pose_xy ); // add to visited pose vector
+                                
+                        // regenerate the target goal
+			target_pose = TargetPlanner::generatePlannedTargetGoal( costmap, visited_robot_pose_vec, is_plan_completed );
+                        std::cout<<"target pose ====================== "<<target_pose.transpose()<<std::endl;
+
+                        
+                        sleep(2);
+                }*/
+
+                if ( is_plan_completed ) {
+                        std::cout<<"---------------------------------------- Traver finished -------------------------------------"<<std::endl;
+                }		
 		
-		auto target_yaw = apf_processor.runApfOnce( robot_pose_2d, obs_vec );		
 	}
 }
 
@@ -224,10 +286,12 @@ int main()
 	std::thread keyboard_control_thread( keyboardControl );
         std::thread odometry_thread( odometryThread );
 	std::thread lidar_thread( lidarThread );
+	//std::thread pathPlanningThread( pathPlannerThread );
 
         keyboard_control_thread.join();
         odometry_thread.join();
 	lidar_thread.join();
+	//pathPlanningThread.join();
 
 
         while ( 1 ) {

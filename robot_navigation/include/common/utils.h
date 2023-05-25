@@ -5,8 +5,9 @@
 #include "data_container.h"
 #include "obstacles.h"
 
-#include <opencv2/opencv.hpp>
+#include "kdtree_obstacles_eigen_adaptor.h"
 
+#include <opencv2/opencv.hpp>
 
 class Utils
 {
@@ -65,6 +66,13 @@ public:
 	}
 
 	template<typename T>
+	static const Eigen::Vector2i coordinateTransformWorld2Map( const Eigen::Matrix<T, 2, 1>& pt_in_world, const Eigen::Vector2i& map_center, const T cell_len )
+	{
+		return Eigen::Vector2i( pt_in_world[0] / cell_len + map_center[0],
+			       	        pt_in_world[1] / cell_len + map_center[1] );
+	}
+
+	template<typename T>
 	static void cvMap2ObstaclesVec( const cv::Mat& map, apf::Obstacles<T>& obs_vec, const Eigen::Vector2i& map_center, const T cell_len )
 	{
 		obs_vec.clearAll();
@@ -72,25 +80,67 @@ public:
 		Eigen::Matrix<T, 2, 1> pre_pt = Eigen::Matrix<T, 2, 1>::Zero();
 		int cnt = 0;
 
-		for ( int i = 0; i < map.rows; i ++ ) {
-			for ( int j = 0; j < map.cols; j ++ ) {
-				if ( map.at<uchar>( j, i ) == 0 ) { // obstacles
+		for ( int i = 0; i < map.cols; i ++ ) {
+			for ( int j = 0; j < map.rows; j ++ ) {
+				if ( map.at<uchar>( i, j ) == 0 ) { // obstacles
 					auto pt = coordinateTransformMap2World( Eigen::Vector2i( i, j ), map_center, cell_len );
+					//std::cout<<"pt["<<cnt<<"] = ( "<<pt.transpose()<<" )"<<std::endl;
+
 					if ( cnt == 0 ) {
 						pre_pt = pt;
 						obs_vec.addObstacle( pt );
 					}		
 					else {
 						if ( ( pt - pre_pt ).norm() > 0.3 ) {
-							obs_vec.addObstacle( pt );
-							pre_pt = pt;
+							kdtree::KdTreeObstaclesType<T> obs( obs_vec );
+							kdtree::KdTreeType<T> kd_tree( 2, obs, 10 );
+
+							T min_dist = 0;
+							size_t closed_pt_idx = -1;
+							nanoflann::KNNResultSet<T> ret_set( 1 );
+							T query_pt[2] = { pt[0], pt[1] };
+							ret_set.init( &closed_pt_idx, &min_dist );
+       							kd_tree.findNeighbors( ret_set, query_pt );
+
+							//std::cout<<"closed_pt_idx = "<<closed_pt_idx<<std::endl;
+        						//std::cout<<"min dist = "<<min_dist<<std::endl;
+        						//std::cout<<"close pt = "<<obs_vec[closed_pt_idx].transpose()<<std::endl;
+
+							if ( ( obs_vec[closed_pt_idx] - pt ).norm() > 0.3 ) {
+								obs_vec.addObstacle( pt );
+								pre_pt = pt;
+								//std::cout<<"pt in obstacle : ("<<pt.transpose()<<" )"<<std::endl;
+							}
 						}
+
 					}
+
+					cnt ++;
+				}
+			}
+		}
+	}
+
+	template<typename T>
+       	static void convertObstacles2PoseXYVec( const apf::Obstacles<T>& obs_vec, std::vector<geometry::PoseXY<T>>& vec )
+	{
+		for ( int i = 0; i < obs_vec.getSize(); i ++ ) {
+			vec.push_back( geometry::PoseXY<T>( obs_vec[i](0), obs_vec[i](1) ) );
+		}
+	}
+
+	static void map2CostMap( const cv::Mat& map, cv::Mat& costmap )
+	{
+		costmap = map;
+
+		for ( int i = 0; i < map.cols; i ++ ) {
+			for ( int j = 0; j < map.rows; j ++ ) {
+				if ( map.at<uchar>( i, j ) == 0 ) {
+					cv::circle( costmap, cv::Point( i, j ), 3, cv::Scalar( 0 ), -1 );
 				}
 			}
 		}
 	}
 };
-
 
 #endif
