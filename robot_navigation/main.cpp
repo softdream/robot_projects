@@ -44,10 +44,10 @@ transport::Sender map_sender( "192.168.3.27", 2337 );
 transport::Sender pose_sender( "192.168.3.27", 2338 );
 // ------------------------------------------------------------------------------------------- //
 
-void sendMapImage()
+void sendMapImage( const cv::Mat& image )
 {
 	std::vector<unsigned char> encode_data;
-        cv::imencode(".jpg", map_image, encode_data);
+        cv::imencode(".jpg", image, encode_data);
         map_sender.send( encode_data ); // send the map image data
 }
 
@@ -172,11 +172,9 @@ void lidarCallback( const sensor::LaserScan& scan )
 		slam_processor.processTheFirstScan( robot_pose, scan_container );
 	
 		if ( scan_frame_cnt == 10 ) {
-			slam_processor.displayMap( map_image, false ); // update the map image
-			sendMapImage(); // send initialized map
+			slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image
+			sendMapImage( map_image ); // send initialized map
 
-			// generate costmap
-			Utils::map2CostMap( cost_map_image, cost_map_image );
 			is_map_ready_flag = true; 
 			std::cout<<"the map is ready now !!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
 		}	
@@ -198,12 +196,9 @@ void lidarCallback( const sensor::LaserScan& scan )
         	pose_sender.send( pose_2 ); // send the global pose of the robot
 	
 		if ( slam_processor.isKeyFrame() ) {  // key pose
-			slam_processor.displayMap( map_image, false ); // update the map image		
+			slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image		
 			// send map
-			sendMapImage();
-
-			// generate costmap
-			Utils::map2CostMap( cost_map_image, cost_map_image );
+			sendMapImage( map_image );
 		}
 	}
 	

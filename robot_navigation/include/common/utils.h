@@ -129,18 +129,6 @@ public:
 		}
 	}
 
-	static void map2CostMap( const cv::Mat& map, cv::Mat& costmap )
-	{
-		costmap = map;
-
-		for ( int i = 0; i < map.cols; i ++ ) {
-			for ( int j = 0; j < map.rows; j ++ ) {
-				if ( map.at<uchar>( i, j ) == 0 ) {
-					cv::circle( costmap, cv::Point( i, j ), 3, cv::Scalar( 0 ), -1 );
-				}
-			}
-		}
-	}
 };
 
 #endif

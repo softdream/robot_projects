@@ -142,91 +142,29 @@ public:
 		return is_key_frame_;
 	}
 
-	void displayMap( cv::Mat &image, const bool display_flag = false )
-	{
-		int occupiedCount = 0;
-		for( int i = 0; i < grid_map_->getSizeX(); i ++ ){
-			for( int j = 0; j < grid_map_->getSizeY(); j ++ ){
-				if( grid_map_->isCellFree( i, j ) ){
-					if ( image.type() == CV_8UC3 )
-                                		cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
-					else if ( image.type() == CV_8UC1 ) 
-						image.at<uchar>( i, j ) = 255;
-				}
-				else if( grid_map_->isCellOccupied( i, j ) ){
-					occupiedCount ++;
-					if ( image.type() == CV_8UC3 )
-						cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
-					else if ( image.type() == CV_8UC1 )
-                                                image.at<uchar>( i, j ) = 0;
-				}
-			}
-		}
-	
-		//Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( last_map_update_pose_ );
-		//cv::Point2d pose_img( pose[0], pose[1] );
-		//cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
-
-		if ( display_flag )
-			cv::imshow( "map", image );
-	}
-	
-	void displayOdometry( cv::Mat &image, 
-			      const std::vector<Eigen::Matrix<DataType, 3, 1>> &key_poses )
-	{
-                for( size_t i = 0; i < key_poses.size(); i ++ ){
-                        Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( key_poses[i] );
-                        cv::Point2d pose_img( pose[0], pose[1] );
-                        cv::circle(image, pose_img, 1, cv::Scalar(0, 255, 0), -1);
-                }		
-
-		cv::imshow( "odom", image );
-	}
-
-	void displayMap( cv::Mat &image, 
-			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &key_poses,
-			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &loop_poses_old, 
-			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &loop_poses_new )
-        {
-                int occupiedCount = 0;
-                for( int i = 0; i < grid_map_->getSizeX(); i ++ ){
-                        for( int j = 0; j < grid_map_->getSizeY(); j ++ ){
-                                if( grid_map_->isCellFree( i, j ) ){
-                                        cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
-                                }
-                                else if( grid_map_->isCellOccupied( i, j ) ){
-                                        occupiedCount ++;
-                                        cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
-                                }
-                        }
-                }
-
-		for( size_t i = 0; i < key_poses.size(); i ++ ){
-			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( key_poses[i] );
-			cv::Point2d pose_img( pose[0], pose[1] );
-                	cv::circle(image, pose_img, 1, cv::Scalar(0, 255, 0), -1);
-		}
-
-		for( size_t i = 0; i < loop_poses_old.size(); i ++ ){
-			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( loop_poses_old[i] );
-			cv::Point2d pose_img( pose[0], pose[1] );
-                        cv::circle( image, pose_img, 2, cv::Scalar( 0, 0, 255 ), -1 );
-		}
-	
-		for( size_t i = 0; i < loop_poses_new.size(); i ++ ){
-			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( loop_poses_new[i] );
-			cv::Point2d pose_img( pose[0], pose[1] );
-                        cv::circle( image, pose_img, 2, cv::Scalar( 255, 0, 0 ), -1 );
-		} 	
-
-                cv::imshow( "map", image );
-        }
-
 	//
 	const grid::OccupiedGridMap<T>& getOccupiedGridMap() const
 	{
 		return * grid_map_;
 	}
+
+	void generateCvMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 3 )
+        {
+                if ( map.type() != CV_8UC1 || costmap.type() != CV_8UC1 ) return;
+
+                for( int i = 0; i < grid_map_->getSizeX(); i ++ ) {
+                        for( int j = 0; j < grid_map_->getSizeY(); j ++ ) {
+                                if( grid_map_->isCellFree( i, j ) ) {
+                                        map.at<uchar>( i, j ) = 255;
+                                        costmap.at<uchar>( i, j ) = 255;
+                                }
+                                else if( grid_map_->isCellOccupied( i, j ) ) {
+                                        map.at<uchar>( i, j ) = 0;
+                                        cv::circle( costmap, cv::Point2d( j, i ), inflate_radius, cv::Scalar(0), -1 );
+                                }
+                        }
+                }
+        }
 
 private:
 	bool poseDiffLargerThan( const Eigen::Matrix<DataType, 3, 1> &pose_old, const Eigen::Matrix<DataType, 3, 1> &pose_new )	
