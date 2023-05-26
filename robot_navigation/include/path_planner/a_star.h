@@ -76,7 +76,7 @@ struct Euclidean
 
 	static ValueType distance( const MapPoseType& src, const MapPoseType& dst ) 
 	{
-		return ( src.cast<T>() - dst.cast<T>() ).norm();
+		return static_cast<ValueType>( ( src - dst ).norm() );
 	}
 };
 
@@ -85,6 +85,8 @@ class AStar
 {
 public:
 	using ValueType = T;
+	using WorldPoseType = typename Eigen::Matrix<ValueType, 2, 1>;
+
 	using CellType = Cell<T>;
 	
 	AStar()
@@ -102,8 +104,10 @@ public:
 		map_ = map;
 	}
 
-	void findPath( const MapPoseType& src, const MapPoseType& target )
+	bool findPath( const MapPoseType& src, const MapPoseType& target )
 	{
+		bool is_path_generated_ = false;
+
 		// 1. initilize the open list and the closed list
 		std::vector<CellType*> open_list;
 		std::vector<MapPoseType> closed_list;
@@ -125,10 +129,12 @@ public:
 				}
 			}
 
-			std::cout<<"current_node.pose = "<<current_node->pose.transpose()<<std::endl;
-
 			// if the current node is the target, stop search
-			if ( current_node->pose == target ) break;
+			if ( current_node->pose == target ) {
+				std::cout<<"find the best path to the target !"<<std::endl;
+				is_path_generated_ = true;
+				break;
+			}
 
 			// remove this node from the open_list
 			open_list.erase( current_node_iter );
@@ -153,49 +159,73 @@ public:
 			
 			for ( int i = 0; i < directions_.size(); i ++ ) {
 				MapPoseType successor_pose = current_node->pose + directions_[i].first;
-				//std::cout<<"successor_pose = "<<successor_pose.transpose()<<std::endl;
 
-				// if the successor is in a occupied cell or in unknow area,  continue;
-				if ( isOccupied( successor_pose ) || isInUnknowArea( successor_pose ) ) continue;
-	
-	
+				// if the successor is on a occupied cell, continue;
+				if ( isOccupied( successor_pose ) || isInUnknowArea( successor_pose ) ){
+					continue;
+				}
+
 				// if the successor is already in the closed list, continue;
-				if ( auto it = std::find( closed_list.begin(), closed_list.end(), successor_pose ); it != closed_list.end() ) continue;
-
+				if ( auto it = std::find( closed_list.begin(), closed_list.end(), successor_pose ); it != closed_list.end() ) {
+					continue;
+				}
 				auto total_cost = current_node->G + directions_[i].second;
-				std::cout<<"total cost = "<<total_cost<<std::endl;
+				
 				// if this successor is already in the open list,
-				//if ( auto successor = std::find( open_list.begin(), open_list.end(), CellType( successor_pose ) ); successor != open_list.end() ) {
 				if ( auto successor = findNodeInOpenList( open_list, successor_pose ) ) {
-					std::cout<<"found in open list"<<std::endl;
 					if ( total_cost < successor->G ) { // if the cost of this direction is lower than the old one, substitute it
 						successor->G = total_cost; // update the cost
 						successor->parent = current_node; // update the parent
 					}
 				}	
 				else { // else : this successor is not in the open list
-					std::cout<<"not found in open list"<<std::endl;
 					auto H = DistancePolicy::distance( successor_pose, target ); // caculae the value of H
 					
 					CellType* new_node = new CellType( successor_pose, total_cost, H, current_node ); // create a node and put into the open list
-					std::cout<<"new node .pose = "<<new_node->pose.transpose()<<", .H = "<<new_node->H<<std::endl;
 
 					open_list.push_back( new_node );
 				}
-
 			}
 		}	
 
-		std::cout<<"find the best path to the target !"<<std::endl;
+		path_.clear();
+		if ( !is_path_generated_ ) {
+			std::cout<<"Can not find the path to the goal !"<<std::endl;	
+			return false;
+		}
+
 		// get the path
-		std::cout<<"current_node.pose = "<<current_node->pose.transpose()<<std::endl;
-	
 		while ( current_node != nullptr ) {
-			//std::cout<<"current_node.pose = "<<current_node->pose.transpose()<<std::endl;
-		
 			path_.push_back( current_node->pose );
+
 			current_node = current_node->parent;
 		}	
+		return true;
+	}
+
+	const std::vector<WorldPoseType> getSmoothedPath( )
+	{
+		std::vector<WorldPoseType> pose_world_vec;
+		std::vector<WorldPoseType> pose_curve_vec;
+
+		// 1. sample
+		int i = path_.size() - 1;
+		for ( ; i >= 0; i -= 2 ) {
+			pose_world_vec.push_back( WorldPoseType( ( path_[i][0] - 250 ) * 0.1, ( path_[i][1] - 250 ) * 0.1 ) );
+
+		}
+		if ( i == -1 ) {
+			pose_world_vec.push_back( WorldPoseType( ( path_[0][0] - 250 ) * 0.1, ( path_[0][1] - 250 ) * 0.1 ) );
+		}	
+
+		// 2. smooth
+		for ( float t = 0; t < 1; t += 0.01 ) {
+                	auto pt = cacuBezierCurvePoint( pose_world_vec, t );
+			pose_curve_vec.push_back( pt );
+        	}
+	
+
+		return pose_curve_vec;
 	}
 
 	const std::vector<MapPoseType>& getPath() const
@@ -203,16 +233,35 @@ public:
 		return path_;
 	}
 
+private:
+	const WorldPoseType cacuBezierCurvePoint( const std::vector<WorldPoseType>& vec, const ValueType t )
+	{
+		std::vector<WorldPoseType> vec_tmp( vec.size() );
+
+		for ( ValueType i = 1; i < vec.size(); i ++ ) {
+			for ( ValueType j = 0; j < vec.size() - 1; j ++ ) {
+				if ( i == 1 ) {
+					vec_tmp[j] = vec[j] * ( 1 - t ) + vec[j + 1] * t;
+					continue;
+				}
+
+				vec_tmp[j] = vec_tmp[j] * ( 1 - t ) + vec_tmp[j + 1] * t;
+			}
+		}
+
+		return vec_tmp[0];
+	}
+
 private:	
 	const bool isOccupied( const MapPoseType& pose ) 
 	{
-		return ( map_.at<uchar>( pose[0], pose[1] ) == 0 );
+		return ( map_.at<uchar>( pose[0], pose[1] ) >= 0 && map_.at<uchar>( pose[0], pose[1] ) <= 50  );
 	}
 
-	const bool isInUnknowArea( const MapPoseType& pose )
+	const bool isInUnknowArea( const MapPoseType& pose  ) 
 	{
-		return ( map_.at<uchar>( pose[0], pose[1] ) == 125 );
-	}	
+		return ( map_.at<uchar>( pose[0], pose[1] ) <= 150 && map_.at<uchar>( pose[0], pose[1] ) >= 60 );
+	}
 
 	CellType* findNodeInOpenList( const std::vector<CellType*>& open_list, const MapPoseType& pose )
 	{
@@ -232,7 +281,7 @@ private:
 	std::vector<MapPoseType> path_;
 
 	const std::vector<std::pair<MapPoseType, ValueType>> directions_ = { { { -1, -1 }, 1.414 }, { { 0, -1 }, 1.0 }, { { 1, -1 }, 1.414 }, { { 1, 0 }, 1.0 }, 
-							  		     { { 1, 1 }, 1.414 }, { { 0, 1 }, 1.0 }, { { -1, 1 }, 1.414 }, { { -1, 0 }, 1.0 } };
+							  			       { { 1, 1 }, 1.414 }, { { 0, 1 }, 1.0 }, { { -1, 1 }, 1.414 }, { { -1, 0 }, 1.0 } };
 };
 
 }

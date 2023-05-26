@@ -32,8 +32,10 @@ cv::Mat costmap = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(),
 
 cv::Mat costmap2 = cv::Mat( 800, 800, CV_8UC3, cv::Scalar( 255, 255, 255 ) );
 
- planner::AStar<float> a_star;
- bool planned_flag = false;
+std::vector<Eigen::Vector2f> visited_robot_pose_vec;
+
+planner::AStar<float> a_star;
+bool planned_flag = false;
  // ----------------------------------------------------------------- //
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
@@ -86,7 +88,7 @@ void map2CostMap2( const cv::Mat& map, cv::Mat& costmap2 )
 				Eigen::Vector2f pt_map( i, j );
 			
 				Eigen::Vector2f pt_world = ( pt_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
-				cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 10, cv::Scalar( 255, 0, 0 ), -1 );
+				cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 12, cv::Scalar( 255, 0, 0 ), -1 );
 			}
 		}
 	}
@@ -170,7 +172,15 @@ void threadSlam()
 
 				a_star.setMap( costmap );
 				auto robot_pose_map = Eigen::Vector2i( robot_pose[0] * 10 + 250, robot_pose[1] * 10 + 250 );
-				Eigen::Vector2i target = TargetPlanner::generatePlannedTargetGoal( costmap, planned_flag );
+				Eigen::Vector2i target = TargetPlanner::generatePlannedTargetGoal( costmap, visited_robot_pose_vec, planned_flag );
+				
+				visited_robot_pose_vec.push_back( Eigen::Vector2f( ( target[0] - 250 ) * 0.1, ( target[0] - 250 ) * 0.1 ) );
+				
+				if ( planned_flag ) {
+					std::cout<<"Finished the Travel !!!!!!!!!!!!!!!!!!!!!!!! "<<std::endl;
+					break;
+				}
+
 				if ( !a_star.findPath( robot_pose_map, target ) )  continue;
 
 				map2CostMap2( image, costmap2 );

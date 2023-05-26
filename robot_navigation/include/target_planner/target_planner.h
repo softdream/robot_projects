@@ -45,9 +45,7 @@ public:
 	                        break;
         	        }
 			randomPointGenerate( img_pose_x, img_pose_y );
-	                //std::cout<<"img_pose : ( "<<img_pose_x<<", "<<img_pose_y<<" )"<<std::endl;
 
-        	        //std::cout<<"map.at<uchar>( "<<img_pose_x<<", "<<img_pose_y<<" ) = "<<int( map.at<uchar>( img_pose_x, img_pose_y ) )<<std::endl;
                 	if ( map.at<uchar>( img_pose_x, img_pose_y ) != 255 ) { // if the goal is not in the freespace, regenerate
                         	continue;
                 	}
@@ -71,7 +69,6 @@ public:
 				bool has_obs_in_ranges_flag = false;
         	                for ( int i = 0; i < obstacles.getSize(); i ++ ) {
                 	                auto obs_pose = obstacles[i];
-                        	        //std::cout<<"distance = "<<( target_goal_world_pose - obs_pose ).norm()<<std::endl;
                                 	// ensure that there is no obstacle in the range of the target goal
 	                                if ( ( target_goal_world_pose - obs_pose ).norm() < 0.4 ) {
         	                                has_obs_in_ranges_flag = true;
@@ -90,8 +87,6 @@ public:
                         	}
                 	}
 
-	                // 
-        	        std::cout<<"iter_cnt ============================ "<<iter_cnt<<std::endl;
         	}
 
 	        return target_goal_world_pose;
@@ -150,7 +145,31 @@ public:
                 return Eigen::Vector2i( img_pose_x, img_pose_y );
         }
 
-		
+	static auto generatePlannedTargetGoal( const cv::Mat& map )
+	{
+                int img_pose_x = -1;
+                int img_pose_y = -1;
+
+
+                bool generate_flag = false;
+
+                while ( !generate_flag ) {
+                        randomPointGenerate( img_pose_x, img_pose_y );
+
+                        if ( map.at<uchar>( img_pose_x, img_pose_y ) != 255 ) { // if the goal is not in the freespace, regenerate
+                                continue;
+                        }
+                        else {
+                                std::cout<<"found one =========================== ( "<<img_pose_x<<", "<<img_pose_y<<" )"<<std::endl;
+                                generate_flag = true;
+                        }
+
+                }
+
+                return Eigen::Vector2i( img_pose_x, img_pose_y );
+        }
+
+	
 };
 
 #endif

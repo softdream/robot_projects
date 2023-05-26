@@ -166,7 +166,7 @@ public:
 		}
 	}
 
-	void generateMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 3 )
+	void generateMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 4 )
 	{
 		if ( map.type() != CV_8UC1 || costmap.type() != CV_8UC1 ) return;
 
