@@ -75,20 +75,6 @@ void displayScan( sensor::ScanContainer& container, const float scale = 100 )
         cv::waitKey(5);
 }
 
-
-void map2CostMap( const cv::Mat& map, cv::Mat& cost_map )
-{
-	cost_map = map;
-
-	for ( int i = 0; i < cost_map.cols; i ++ ) {
-		for ( int j = 0; j < cost_map.rows; j ++ ) {
-			if ( cost_map.at<uchar>( i, j ) == 1 ) {
-				cv::circle( cost_map, cv::Point2d( j, i ), 3, cv::Scalar(0), -1 );
-			}
-		}
-	}
-}
-
 void map2CostMap2( const cv::Mat& map, cv::Mat& costmap2 )
 {
 	costmap2 = cv::Mat( 800, 800, CV_8UC3, cv::Scalar( 255, 255, 255 ) );
@@ -100,7 +86,7 @@ void map2CostMap2( const cv::Mat& map, cv::Mat& costmap2 )
 				Eigen::Vector2f pt_map( i, j );
 			
 				Eigen::Vector2f pt_world = ( pt_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
-				cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 3, cv::Scalar( 255, 0, 0 ), -1 );
+				cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 10, cv::Scalar( 255, 0, 0 ), -1 );
 			}
 		}
 	}
@@ -178,11 +164,7 @@ void threadSlam()
                         std::cout<<"------------------"<<std::endl;
 
 			if( slam_processor.isKeyFrame() ){
-				slam_processor.displayMap( image );
-
-				//cv::imshow( "map", image );
-
-				map2CostMap( image, costmap );
+				slam_processor.generateMap( image, costmap );
 				
 				//cv::imshow( "costmap", costmap );
 

@@ -164,12 +164,24 @@ public:
 				}
 			}
 		}
-	
-		//Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( last_map_update_pose_ );
-		//cv::Point2d pose_img( pose[0], pose[1] );
-		//cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
+	}
 
-	//	cv::imshow( "map", image );
+	void generateMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 3 )
+	{
+		if ( map.type() != CV_8UC1 || costmap.type() != CV_8UC1 ) return;
+
+		for( int i = 0; i < grid_map_->getSizeX(); i ++ ) {
+                        for( int j = 0; j < grid_map_->getSizeY(); j ++ ) {
+				if( grid_map_->isCellFree( i, j ) ) {
+					map.at<uchar>( i, j ) = 255;
+					costmap.at<uchar>( i, j ) = 255;
+				}
+				else if( grid_map_->isCellOccupied( i, j ) ) {
+				 	map.at<uchar>( i, j ) = 0;
+					cv::circle( costmap, cv::Point2d( j, i ), inflate_radius, cv::Scalar(0), -1 );
+				}	
+			}
+		}
 	}
 	
 	void displayOdometry( cv::Mat &image, 
