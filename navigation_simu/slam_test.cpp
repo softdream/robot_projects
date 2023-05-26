@@ -122,6 +122,23 @@ void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2i>& path, cons
 	} 
 }
 
+void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2f>& path, const Eigen::Vector2i& target, const Eigen::Vector2f& start )
+{
+        std::cout<<"path.size ====== == === "<<path.size()<<std::endl;
+
+        Eigen::Vector2f dst_map( target[0], target[1] );
+        Eigen::Vector2f dst_world = ( dst_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
+        cv::circle( costmap2, cv::Point( dst_world[0] * 50 + 400, dst_world[1] * 50 + 400 ), 5, cv::Scalar( 0, 0, 255 ), -1 );
+
+	cv::circle( costmap2, cv::Point( start[0] * 50 + 400, start[1] * 50 + 400 ), 5, cv::Scalar( 0, 255, 255 ), -1 );
+
+
+        for ( const auto& pt : path ) {
+                cv::circle( costmap2, cv::Point( pt[0] * 50 + 400, pt[1] * 50 + 400 ), 3, cv::Scalar( 0, 255, 0 ), -1 );
+        }
+}
+
+
 void threadSlam()
 {
 	simulation::Simulation simulation;
@@ -172,17 +189,20 @@ void threadSlam()
 				a_star.setMap( costmap );
 				auto robot_pose_map = Eigen::Vector2i( robot_pose[0] * 10 + 250, robot_pose[1] * 10 + 250 );
 				Eigen::Vector2i target = TargetPlanner::generatePlannedTargetGoal( costmap, planned_flag );
-				a_star.findPath( robot_pose_map, target );
-				auto path = a_star.getPath();
+				if ( !a_star.findPath( robot_pose_map, target ) )  continue;
 
 				map2CostMap2( image, costmap2 );
-				drawPath( costmap2, path, target );
+
+				auto path = a_star.bezierSmoothness();
+					
+				drawPath( costmap2, path, target, robot_pose.head( 2 ) );
 				cv::imshow( "costmap", costmap2 );
+				cv::waitKey(0);
 				//cv::imwrite(std::to_string( img_cnt ++ ) + ".jpg", costmap);
 			}
 		}
 		
-		cv::waitKey(200);
+		cv::waitKey(100);
 	}
 
 	simulation.closeSimulationFile();

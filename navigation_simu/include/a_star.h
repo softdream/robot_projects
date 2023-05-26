@@ -104,8 +104,10 @@ public:
 		map_ = map;
 	}
 
-	void findPath( const MapPoseType& src, const MapPoseType& target )
+	bool findPath( const MapPoseType& src, const MapPoseType& target )
 	{
+		bool is_path_generated_ = false;
+
 		// 1. initilize the open list and the closed list
 		std::vector<CellType*> open_list;
 		std::vector<MapPoseType> closed_list;
@@ -188,55 +190,72 @@ public:
 			}
 		}	
 
-		if ( !is_path_generated_ ) return;
+		path_.clear();
+		if ( !is_path_generated_ ) {
+			std::cout<<"Can not find the path to the goal !"<<std::endl;	
+			return false;
+		}
 
 		// get the path
-		path_.clear();
 		while ( current_node != nullptr ) {
 			path_.push_back( current_node->pose );
 
 			current_node = current_node->parent;
 		}	
+		return true;
 	}
 
 	const std::vector<WorldPoseType> bezierSmoothness( )
 	{
+		std::cout<<"path_.size() ==== "<<path_.size()<<std::endl;
+
 		std::vector<WorldPoseType> pose_world_vec;
 		std::vector<WorldPoseType> pose_curve_vec;
 
 		// 1. sample
-		int i = path_.size();
-		for ( ; i >= 0; i -= 10 ) {
+		int i = path_.size() - 1;
+		for ( ; i >= 0; i -= 2 ) {
 			pose_world_vec.push_back( WorldPoseType( ( path_[i][0] - 250 ) * 0.1, ( path_[i][1] - 250 ) * 0.1 ) );
 
 		}
-		if ( i > 0 ) {
+		if ( i == -1 ) {
 			pose_world_vec.push_back( WorldPoseType( ( path_[0][0] - 250 ) * 0.1, ( path_[0][1] - 250 ) * 0.1 ) );
 		}	
 
+		std::cout<<"pose_world_vec.size() ======= "<<pose_world_vec.size()<<std::endl;
 		// 2. smooth
-		int j = 0;
-		for ( ; j <= pose_world_vec.size(); j += 3 ) {
-			WorldPoseType p0 = vec[j];
-			WorldPoseType p1 = vec[j + 1];
-			WorldPoseType p2 = vec[j + 2];
-			WorldPoseType p3 = vec[j + 3];
 
-			for ( ValueType t = 0; t < 1; t += 0.05 ) {
-				ValueType tmp = ( 1 - t );
-
-				auto b_t = p0* tmp * tmp * tmp + 3 * p1 * t * tmp * tmp + 3 * p2 * t * t * tmp + p3 * t * t * t;
-				pose_curve_vec.push_back( b_t );
-			}
-		} 
+		for ( float t = 0; t < 1; t += 0.01 ) {
+                	auto pt = cacuBezierCurvePoint( pose_world_vec, t );
+			pose_curve_vec.push_back( pt );
+        	}
+	
 
 		return pose_curve_vec;
-		
 	}
 
 	const std::vector<MapPoseType>& getPath() const
 	{
 		return path_;
+	}
+
+private:
+	const WorldPoseType cacuBezierCurvePoint( const std::vector<WorldPoseType>& vec, const ValueType t )
+	{
+		std::vector<WorldPoseType> vec_tmp( vec.size() );
+
+		for ( ValueType i = 1; i < vec.size(); i ++ ) {
+			for ( ValueType j = 0; j < vec.size() - 1; j ++ ) {
+				if ( i == 1 ) {
+					vec_tmp[j] = vec[j] * ( 1 - t ) + vec[j + 1] * t;
+					continue;
+				}
+
+				vec_tmp[j] = vec_tmp[j] * ( 1 - t ) + vec_tmp[j + 1] * t;
+			}
+		}
+
+		return vec_tmp[0];
 	}
 
 private:	
@@ -266,8 +285,6 @@ private:
 	cv::Mat map_;
 
 	std::vector<MapPoseType> path_;
-
-	bool is_path_generated_ = false;
 
 	const std::vector<std::pair<MapPoseType, ValueType>> directions_ = { { { -1, -1 }, 1.414 }, { { 0, -1 }, 1.0 }, { { 1, -1 }, 1.414 }, { { 1, 0 }, 1.0 }, 
 							  			       { { 1, 1 }, 1.414 }, { { 0, 1 }, 1.0 }, { { -1, 1 }, 1.414 }, { { -1, 0 }, 1.0 } };
