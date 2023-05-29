@@ -23,7 +23,7 @@ public:
 
 	Tracking()
 	{
-		yaw_pid_ = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.5, 0.3);
+		yaw_pid_ = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.5, 0.03);
 	}
 
 	~Tracking()
