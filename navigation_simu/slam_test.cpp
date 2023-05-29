@@ -105,7 +105,7 @@ void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2i>& path, cons
 	for ( const auto& pt : path ) {
 		Eigen::Vector2f pt_map( pt[0], pt[1] );
 		Eigen::Vector2f pt_world = ( pt_map - Eigen::Vector2f( 250, 250 ) ) * 0.1;
-
+		std::cout<<"path : ( "<<pt_world.transpose()<<" )"<<std::endl;
 		cv::circle( costmap2, cv::Point( pt_world[0] * 50 + 400, pt_world[1] * 50 + 400 ), 3, cv::Scalar( 0, 255, 0 ), -1 );
 	} 
 }
@@ -122,6 +122,7 @@ void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2f>& path, cons
 
 
         for ( const auto& pt : path ) {
+		std::cout<<"path : ( "<<pt.transpose()<<" )"<<std::endl;
                 cv::circle( costmap2, cv::Point( pt[0] * 50 + 400, pt[1] * 50 + 400 ), 3, cv::Scalar( 0, 255, 0 ), -1 );
         }
 }

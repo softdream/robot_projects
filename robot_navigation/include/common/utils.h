@@ -84,7 +84,6 @@ public:
 			for ( int j = 0; j < map.rows; j ++ ) {
 				if ( map.at<uchar>( i, j ) == 0 ) { // obstacles
 					auto pt = coordinateTransformMap2World( Eigen::Vector2i( i, j ), map_center, cell_len );
-					//std::cout<<"pt["<<cnt<<"] = ( "<<pt.transpose()<<" )"<<std::endl;
 
 					if ( cnt == 0 ) {
 						pre_pt = pt;
@@ -102,14 +101,10 @@ public:
 							ret_set.init( &closed_pt_idx, &min_dist );
        							kd_tree.findNeighbors( ret_set, query_pt );
 
-							//std::cout<<"closed_pt_idx = "<<closed_pt_idx<<std::endl;
-        						//std::cout<<"min dist = "<<min_dist<<std::endl;
-        						//std::cout<<"close pt = "<<obs_vec[closed_pt_idx].transpose()<<std::endl;
 
 							if ( ( obs_vec[closed_pt_idx] - pt ).norm() > 0.3 ) {
 								obs_vec.addObstacle( pt );
 								pre_pt = pt;
-								//std::cout<<"pt in obstacle : ("<<pt.transpose()<<" )"<<std::endl;
 							}
 						}
 

@@ -69,7 +69,6 @@ public:
                 int iter_cnt = 0;
 		
 		while ( !generate_flag ) {
-			std::cout<<"iter cnt ======================= "<<iter_cnt<<std::endl;
                         if ( iter_cnt > 20 ) {
                                 visited_robot_pose.clear();
                                 plan_complete_flag = true;

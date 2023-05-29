@@ -231,44 +231,6 @@ void pathPlannerThread()
 
 		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
 
-                // if the global map is ready, can start the path planning
-                if ( !is_initialized  && is_map_ready_flag ) { 
-                 	target_pose = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );       
-                        //target_pose = Eigen::Vector2f( 0.7, 0.3 );
-                        std::cout<<"target pose ====================== "<<target_pose.transpose()<<std::endl;
-			// generate the path
-			//auto robot_pose_xy_map = Utils::coordinateTransformWorld2Map( robot_pose_xy, Eigen::Vector2i( 250, 250 ), 0.1 );
-
-			a_star.setMap( cost_map_image );
-			//a_star.findPath( robot_pose_xy_map, target_pose );
-                        
-                        is_initialized = true;  
-
-                        continue;
-                }       
-
-                if ( !is_map_ready_flag ) continue;
-	
-		// reached the goal
-                /*if ( ( target_pose - robot_pose_xy ).norm() < 0.2 ) {
-                        usleep( 100000 );
-                        odometry.sendControlVector( 0.0, 0.0 );
-                        std::cout<<"---------------------------------------- REACHED ---------------------------------"<<std::endl;
-
-                        //visited_robot_pose_vec.push_back( robot_pose_xy ); // add to visited pose vector
-                                
-                        // regenerate the target goal
-			target_pose = TargetPlanner::generatePlannedTargetGoal( costmap, visited_robot_pose_vec, is_plan_completed );
-                        std::cout<<"target pose ====================== "<<target_pose.transpose()<<std::endl;
-
-                        
-                        sleep(2);
-                }*/
-
-                if ( is_plan_completed ) {
-                        std::cout<<"---------------------------------------- Traver finished -------------------------------------"<<std::endl;
-                }		
-		
 	}
 }
 
