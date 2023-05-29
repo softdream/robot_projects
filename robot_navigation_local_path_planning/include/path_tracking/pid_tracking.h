@@ -23,7 +23,7 @@ public:
 
 	Tracking()
 	{
-		yaw_pid_ = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.5, 0.03);
+		yaw_pid_ = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.0, 0.03);
 	}
 
 	~Tracking()
@@ -111,6 +111,9 @@ public:
 	// u = ( v, w )
         const std::pair<DataType, DataType> cacuControlVector( const DataType target_yaw, const DataType curr_yaw )
 	{
+		std::cout<<"target yaw = "<<target_yaw<<std::endl;
+		std::cout<<"curr_yaw = "<<curr_yaw<<std::endl;
+
 		if ( std::abs( curr_yaw - target_yaw ) >= ( M_PI * 0.5 ) ) {
                         auto w = yawPidProcess( curr_yaw, target_yaw );
                         return { 0.0, -w };

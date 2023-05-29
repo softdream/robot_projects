@@ -236,7 +236,9 @@ void pathPlannerThread()
 	
 
 		if ( !is_initialized && is_map_ready_flag ) {
-			target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed );
+			//target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed );
+			target = Eigen::Vector2f( -0.5, 0.3 );		
+
 			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
 			
 			apf_processor.setTargetPose( target );
@@ -245,6 +247,8 @@ void pathPlannerThread()
 			
 			continue;
 		}
+
+		if ( !is_map_ready_flag ) continue;
 
 		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
 		auto curr_yaw = robot_pose[2];
@@ -255,9 +259,10 @@ void pathPlannerThread()
 		odometry.sendControlVector( u.first, u.second );
 
 		if ( ( robot_pose_xy - target ).norm() <= 0.2 ) {
-			std::cout<<"target goal is arrived !"<<std::endl;
-			usleep( 100 );
+			usleep( 100000 );
 			odometry.sendControlVector( 0.0, 0.0 );
+			std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
+
 
 			break;
 		}
@@ -273,12 +278,12 @@ int main()
 	std::thread keyboard_control_thread( keyboardControl );
         std::thread odometry_thread( odometryThread );
 	std::thread lidar_thread( lidarThread );
-	//std::thread pathPlanningThread( pathPlannerThread );
+	std::thread pathPlanningThread( pathPlannerThread );
 
         keyboard_control_thread.join();
         odometry_thread.join();
 	lidar_thread.join();
-	//pathPlanningThread.join();
+	pathPlanningThread.join();
 
 
         while ( 1 ) {

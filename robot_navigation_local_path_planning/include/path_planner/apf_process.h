@@ -44,17 +44,22 @@ public:
 		// 3. total force
 		Vector2 f_total = f_att_vec + f_rep_vec;
 
+		std::cout<<"f_total = "<<f_total.transpose()<<std::endl;
+
 		// 4. get target angle
-		DataType target_theta = 0;
+		/*DataType target_theta = 0;
 		if ( f_total[0] < 0 && f_total[1] > 0 ) {
 			target_theta = M_PI + ::atan2( f_total[1], f_total[0] );
 		}
 		else if ( f_total[0] < 0 && f_total[1] < 0  ) {
+
 			target_theta = ::atan2( f_total[1], f_total[0] ) - M_PI;
 		}
 		else {
 			target_theta = ::atan2( f_total[1], f_total[0] );
-		}
+		}*/
+
+		DataType target_theta = ::atan2( f_total[1], f_total[0] );
 
 		Utils::angleNormalize( target_theta );
 
