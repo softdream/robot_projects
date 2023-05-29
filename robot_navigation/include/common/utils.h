@@ -124,6 +124,15 @@ public:
 		}
 	}
 
+	template<typename T>
+	static void convertEigenVec2PoseXYVec( const std::vector<Eigen::Matrix<T, 2, 1>>& path_vec, std::vector<geometry::PoseXY<T>>& trajectory )
+	{
+		trajectory.clear();
+
+		for ( const auto& pt : path_vec ) {
+			trajectory.push_back( geometry::PoseXY<T>( pt[0], pt[1] ) );
+		}
+	}
 };
 
 #endif

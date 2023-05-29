@@ -38,10 +38,11 @@ cv::Mat cost_map_image = cv::Mat( slam_processor.getSizeX(), slam_processor.getS
 
 bool is_map_ready_flag = false; // 11. global map ready flag
 
-transport::Sender odom_sender( "192.168.3.27", 2335 );
-transport::Sender scan_sender( "192.168.3.27", 2336 );
-transport::Sender map_sender( "192.168.3.27", 2337 );
-transport::Sender pose_sender( "192.168.3.27", 2338 );
+transport::Sender odom_sender( "192.168.3.27", 2335 ); // send odometry data
+transport::Sender scan_sender( "192.168.3.27", 2336 ); // send lidar scan data
+transport::Sender map_sender( "192.168.3.27", 2337 ); // send map data
+transport::Sender pose_sender( "192.168.3.27", 2338 ); // send robot pose data
+transport::Sender trajectory_sender( "192.168.3.27", 2339 ); // send the trajectory data
 // ------------------------------------------------------------------------------------------- //
 
 void sendMapImage( const cv::Mat& image )
@@ -222,14 +223,35 @@ void pathPlannerThread()
 
 	bool is_initialized = false;
 	std::vector<Eigen::Vector2f> visited_robot_pose_vec;
-        Eigen::Vector2i target_pose = Eigen::Vector2i::Zero();
+        Eigen::Vector2i target = Eigen::Vector2i::Zero();
 	bool is_plan_completed = false;
+
+	std::vector<Eigen::Vector2f> trajectory;
+	std::vector<geometry::PoseXY<float>> geometry_trajectory;
 
 	while ( 1 ) {
                 usleep( 200000 );
                 std::cout<<"----------------------------- path planning ----------------------- "<<std::endl;
-
+	
 		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
+                Eigen::Vector2i robot_pose_map = Utils::coordinateTransformWorld2Map( robot_pose_xy, Eigen::Vector2i( 250, 250 ), 0.1f );
+
+
+		if ( !is_initialized && is_map_ready_flag ) {
+			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
+	
+			if ( a_star.findPath( robot_pose_map, target ) ) {
+				trajectory = a_star.getSmoothedPath();		
+				
+				Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
+				trajectory_sender.send( geometry_trajectory );
+
+				is_initialized = true;
+			}
+		}
+
+
 
 	}
 }

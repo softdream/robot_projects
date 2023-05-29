@@ -34,7 +34,17 @@ public:
 	const DataType cacuYaw(const Vector2& p1, const Vector2& p2)
 	{
 		Vector2 tmp = p2 - p1;
-		DataType yaw = ::atan2(tmp[1], tmp[0]);
+		DataType yaw = 0;
+
+		if ( tmp[0] < 0 && tmp[1] > 0 ) {
+			yaw = M_PI + ::atan2(tmp[1], tmp[0]);
+		}
+		else if ( tmp[0] < 0 && tmp[1] < 0 ) {
+			yaw = ::atan2(tmp[1], tmp[0]) - M_PI;
+		}
+		else {
+			yaw = ::atan2(tmp[1], tmp[0]);
+		}
 
 		Utils::angleNormalize( yaw );
 			
@@ -73,7 +83,7 @@ public:
 		auto curr_pose_xy = curr_pose.head(2);
 		auto curr_yaw = curr_pose[2];
 
-		auto closed_idx = findClosedPtIndex( trajectory, curr_pose );	
+		auto closed_idx = findClosedPtIndex( trajectory, curr_pose_xy );	
 		
 		if ( closed_idx == -1 ) {
 			std::cout<<"there is no closed point around the current pose !"<<std::endl;
@@ -97,6 +107,7 @@ public:
 		
 		return { 0.0, 0.0 };
 	}
+
 
 private:
 	PID<DataType>* yaw_pid_;

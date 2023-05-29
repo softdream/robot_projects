@@ -219,7 +219,7 @@ public:
 		}	
 
 		// 2. smooth
-		for ( float t = 0; t < 1; t += 0.01 ) {
+		for ( ValueType t = 0; t < 1; t += 0.01 ) {
                 	auto pt = cacuBezierCurvePoint( pose_world_vec, t );
 			pose_curve_vec.push_back( pt );
         	}
