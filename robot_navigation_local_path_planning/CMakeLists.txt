@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED( VERSION 3.21.1 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.16 )
 
 # Set a default build type if none was specified
 IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -38,6 +38,9 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/include/odom
 	${CMAKE_SOURCE_DIR}/include/slam
 	${CMAKE_SOURCE_DIR}/include/device
+	${CMAKE_SOURCE_DIR}/include/path_planner
+	${CMAKE_SOURCE_DIR}/include/path_tracking
+	${CMAKE_SOURCE_DIR}/include/target_planner
 	${CMAKE_SOURCE_DIR}/src
 )
 
@@ -46,7 +49,6 @@ LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib)
 
 # add source files
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src src_files)
-AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src/odom src_files)
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} src_files)
 
 # generate executable file

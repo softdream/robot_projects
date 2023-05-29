@@ -126,7 +126,7 @@ public:
 
 			// millis(), velocity, delta_s, delta_angle, imu.gz, l_rpm, r_rpm
 			if ( type == measurement ) {
-				std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
+				//std::cout<<"measurement : "<<measure_.transpose()<<std::endl;			
 
 				if ( measure_[5] == 0 && measure_[6] == 0 ) is_static_ = true;
 				else is_static_ = false;
@@ -223,6 +223,7 @@ public:
 	int sendControlVector( const DataType v, const DataType w )
 	{
 		Control u( v, w );	
+		std::cout<<"send control vector : ( "<<v<<", "<<w<<" )"<<std::endl;
 		return uart_->writeData( u );	
 	}
 

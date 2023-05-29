@@ -32,6 +32,33 @@ using Pose2d = Pose2_<double>;
 using Pose2f = Pose2_<float>;
 using Pose2i = Pose2_<int>;
 
+template<typename T>
+struct PoseXY_
+{
+        using Type = T;
+
+        PoseXY_()
+        {
+
+        }
+  
+        PoseXY_( const Type x_, const Type y_ ) : x( x_ ), y( y_ )
+        {
+
+        }
+
+        Type x = 0.0;
+        Type y = 0.0;
+};
+
+template<typename T>
+using PoseXY = PoseXY_<T>;
+
+using PoseXYd = PoseXY_<double>;
+using PoseXYf = PoseXY_<float>;
+using PoseXYi = PoseXY_<int>;
+
+
 }
 
 namespace sensor
