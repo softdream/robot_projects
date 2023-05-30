@@ -237,7 +237,7 @@ void pathPlannerThread()
 
 		if ( !is_initialized && is_map_ready_flag ) {
 			//target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed );
-			target = Eigen::Vector2f( -0.5, 0.3 );		
+			target = Eigen::Vector2f( 0.9, 0.3 );		
 
 			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
 			
