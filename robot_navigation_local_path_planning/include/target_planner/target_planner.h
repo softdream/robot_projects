@@ -38,8 +38,7 @@ public:
         	int iter_cnt = 0;
 
 	        while ( !generate_flag ) {
-        	        if ( iter_cnt > 100 ) {
-                	        //visited_robot_pose.clear();
+        	        if ( iter_cnt > 20 ) {
                         	plan_complete_flag = true;
 
 	                        break;
@@ -55,7 +54,7 @@ public:
 
                         	bool is_visited_flag = false;
 	                        for ( const auto& robot_pose : visited_robot_pose ) {
-        	                        if ( ( target_goal_world_pose - robot_pose ).norm() < 0.6 ) {
+        	                        if ( ( target_goal_world_pose - robot_pose ).norm() < 1.0 ) {
                 	                        is_visited_flag = true;
                         	                break;
                                 	}
@@ -70,7 +69,7 @@ public:
         	                for ( int i = 0; i < obstacles.getSize(); i ++ ) {
                 	                auto obs_pose = obstacles[i];
                                 	// ensure that there is no obstacle in the range of the target goal
-	                                if ( ( target_goal_world_pose - obs_pose ).norm() < 0.4 ) {
+	                                if ( ( target_goal_world_pose - obs_pose ).norm() < 0.5 ) {
         	                                has_obs_in_ranges_flag = true;
                 	                        break;
                         	        }

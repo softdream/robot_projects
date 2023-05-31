@@ -28,7 +28,8 @@ namespace pt
 		const DataType caculate(const DataType& target, const DataType& current)
 		{
 			// error
-			DataType error = target - current;
+			//DataType error = target - current;
+			DataType error = std::abs( target - current );
 
 			// Proportional
 			DataType p_out = kp_ * error;

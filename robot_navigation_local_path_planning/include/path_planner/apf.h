@@ -133,9 +133,9 @@ private:
 
 
 private:
-	DataType eta_ = 1.0;
-        DataType cauchy_ = 0.12;
-	DataType rho0_ = 0.4;
+	DataType eta_ = 1.5;
+        DataType cauchy_ = 0.15;
+	DataType rho0_ = 0.3;
 	int n_ = 3;
 
 	Vector2 target_pose_ = Vector2::Zero();

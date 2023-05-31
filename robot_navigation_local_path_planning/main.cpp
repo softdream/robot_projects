@@ -45,6 +45,7 @@ transport::Sender odom_sender( "192.168.3.27", 2335 ); // send the odometry data
 transport::Sender scan_sender( "192.168.3.27", 2336 ); // send the lidar scan data
 transport::Sender map_sender( "192.168.3.27", 2337 ); // send the map data
 transport::Sender pose_sender( "192.168.3.27", 2338 ); // send the robot pose data
+transport::Sender target_sender( "192.168.3.27", 2339 );
 // ------------------------------------------------------------------------------------------- //
 
 void sendMapImage( const cv::Mat& image )
@@ -257,10 +258,13 @@ void pathPlannerThread()
 		if ( !is_initialized && is_map_ready_flag ) {
 			visited_poses.push_back( Eigen::Vector2f( 0.0, 0.0 ) );
 
-			target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed ); // generate the target goal
+			//target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed ); // generate the target goal
+			target = Eigen::Vector2f( -1, 0.1 );
 
 			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
-			
+			geometry::PoseXYf target_pose_xy( target[0], target[1] );
+                	target_sender.send( target_pose_xy ); // send the target pose 
+
 			apf_processor.setTargetPose( target ); // set the target goal for the apf planner
 			is_initialized = true;
 			
@@ -281,11 +285,14 @@ void pathPlannerThread()
 			usleep( 100000 );
 			odometry.sendControlVector( 0.0, 0.0 ); // stop the robot
 			std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
+			break;
 
 			sleep(2);
 			visited_poses.push_back( target ); // add the previous target to the visted poses' list
 
 			target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed ); // regenerate the target goal
+			geometry::PoseXYf target_pose_xy( target[0], target[1] );
+                        target_sender.send( target_pose_xy ); // send the target pose
 
 			if ( is_plan_completed ) {
 				std::cout<<"the robot has traveled all around the world !"<<std::endl;
