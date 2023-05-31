@@ -73,9 +73,9 @@ public:
 		Eigen::Matrix<T, 2, 1> pre_pt = Eigen::Matrix<T, 2, 1>::Zero();
 		int cnt = 0;
 
-		for ( int i = 0; i < map.rows; i ++ ) {
-			for ( int j = 0; j < map.cols; j ++ ) {
-				if ( map.at<uchar>( j, i ) == 0 ) { // obstacles
+		for ( int i = 0; i < map.cols; i ++ ) {
+			for ( int j = 0; j < map.rows; j ++ ) {
+				if ( map.at<uchar>( i, j ) == 0 ) { // obstacles
 					auto pt = coordinateTransformMap2World( Eigen::Vector2i( i, j ), map_center, cell_len );
 					//std::cout<<"pt["<<cnt<<"] = ( "<<pt.transpose()<<" )"<<std::endl;
 

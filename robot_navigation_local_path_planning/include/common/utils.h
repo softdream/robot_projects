@@ -13,26 +13,26 @@ class Utils
 {
 public:
 	static void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
-{
-        container.clear();
+	{
+        	container.clear();
 
-        float angle = 0.0;
-        for ( size_t i = 0; i < scan.size(); i ++ ) {
-                auto dist = scan.ranges[i];
-                if ( dist >= 0.1 && dist < 10.0 ) {
-                        auto pt = Eigen::Vector2f( ::cos( angle ) * dist, ::sin( angle ) * dist );
-                        Eigen::Matrix2f R;
-                        R << ::cos( M_PI ), -::sin( M_PI ),
-                             ::sin( M_PI ),  ::cos( M_PI );
+	        typename sensor::ScanContainer::value_type angle = 0.0f;
+        	for ( size_t i = 0; i < scan.size(); i ++ ) {
+                	auto dist = scan.ranges[i];
+	                if ( dist >= 0.1f && dist < 10.0f ) {
+        	                auto pt = Eigen::Vector2f( ::cos( angle ) * dist, ::sin( angle ) * dist );
+                	        Eigen::Matrix2f R;
+                        	R << ::cos( M_PI ), -::sin( M_PI ),
+	                             ::sin( M_PI ),  ::cos( M_PI );
 
-                        container.addData( R * pt );
-                }
+        	                container.addData( R * pt );
+                	}
 
-                angle += scan.angle_increment;
-        }
+	                angle += scan.angle_increment;
+        	}
 
-        std::cout<<"Scan Container size : "<<container.getSize()<<std::endl;
-}
+	        std::cout<<"Scan Container size : "<<container.getSize()<<std::endl;
+	}
 
 	static void displayScan( sensor::ScanContainer& container, const float scale = 100 )
 	{

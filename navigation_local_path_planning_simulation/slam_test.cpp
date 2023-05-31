@@ -76,13 +76,15 @@ void displayScan( sensor::ScanContainer& container, const float scale = 100 )
 
 void drawObstables( cv::Mat& map, const apf::Obstacles<float>& obs_vec, const Eigen::Vector2f& target )
 {
+	//map = cv::Mat( 800, 800, CV_8UC3, cv::Scalar( 255, 255, 255 ) );
+
 	for ( int i = 0; i < obs_vec.getSize(); i ++ ) {
 		auto pt = obs_vec[i];
 
 		cv::circle( map, cv::Point( pt[0] * 50 + 400, pt[1] * 50 + 400 ), 12, cv::Scalar( 255, 0, 0 ), -1 );
 	}
 
-	cv::circle( map, cv::Point( target[0] * 50 + 400, target[1] * 50 + 400 ), 12, cv::Scalar( 0, 0, 255 ), -1 );
+	cv::circle( map, cv::Point( target[0] * 50 + 400, target[1] * 50 + 400 ), 5, cv::Scalar( 0, 0, 255 ), -1 );
 }
 
 void threadSlam()
@@ -130,8 +132,14 @@ void threadSlam()
 				Eigen::Vector2i target_map( target[0] * 10 + 250, target[1] * 10 + 250 );
 				std::cout<<"target map value = "<<(int)image.at<uchar>( target_map[0], target_map[1] )<<std::endl;
 
-				drawObstables( costmap2, obstacles, target );	
+				if ( is_plan_completed ) {
+					std::cout<<"target plan is finished !"<<std::endl;
+					return;
+				}
 
+				drawObstables( costmap2, obstacles, target );	
+				visited_poses.push_back( target );
+				
 				cv::imshow( "costmap", costmap2 );
 				cv::waitKey(0);
 			}
