@@ -1,0 +1,140 @@
+#ifndef __LOOP_CLOSURE_DETECT_H
+#define __LOOP_CLOSURE_DETECT_H
+
+#include <iostream>
+#include "data_container.h"
+
+#define LASER_DIST 5.0
+#define ROWS 25
+#define COLS 25
+#define DIMENSION 100
+
+namespace slam
+{
+
+template<typename T>
+struct NDCell_
+{
+	using ValueType = T;
+	using Vector2 = typename Eigen::Matrix<ValueType, 2, 1>;
+	using Matrix2 = typename Eigen::Matrix<ValueType, 2, 2>;
+
+
+	Vector2 mean = Vector2::Zero();
+	Matrix2 covarince = Matrix2::Identity();
+	std::vector<Vector2> points;
+};
+
+template<typename T>
+using NDCell = NDCell_<T>;
+
+template<typename T, template<typename > class CellType = NDCell>
+class LoopDetect
+{
+public:
+	using ValueType = T;
+	using PointType = typename CellType<ValueType>::Vector2;
+	using CovarinceType = typename CellType<ValueType>::Matrix2;
+	using MapPointType = Eigen::Vector2i;
+
+	LoopDetect()
+	{
+	
+	}
+
+	~LoopDetect()
+	{
+	
+	}
+
+	void makeScanContext( const sensor::ScanContainer& scan )
+	{
+		// 1. cacluate the normal distribution
+		cacuNDGrid( scan );
+
+		desc_.setZero();
+		/*for ( int i = 0; i < ROWS; i ++ ) {
+			for ( int j = 0; j < COLS; j ++ ) {
+				desc_[i * 4 + 0] += grid_[i][j].mean(0);
+				desc_[i * 4 + 1] += grid_[i][j].mean(1);
+				desc_[i * 4 + 2] += grid_[i][j].covarince( 0, 0 );
+				desc_[i * 4 + 3] += grid_[i][j].covarince( 1, 1 );
+			}
+		}
+
+		desc_ /= static_cast<ValueType>( COLS );
+		std::cout<<"desc_ = ( "<<desc_.transpose()<<" )"<<std::endl;
+		*/
+	}
+
+private:
+	void cacuNDGrid( const sensor::ScanContainer& scan )
+	{
+		grid_.resize( ROWS, std::vector<CellType<ValueType>>( COLS ) );
+
+		for ( int i = 0; i < scan.getSize(); i ++ ) {
+			PointType pt = scan.getIndexData( i );
+
+			auto idx = getPtIndex( pt );
+			grid_[idx(0)][idx(1)].mean += pt;
+			grid_[idx(0)][idx(1)].points.push_back( pt );
+		}
+
+		for ( int i = 0; i < ROWS; i ++ ) {
+			for ( int j = 0; j < COLS; j ++ ) {
+				int pt_num = grid_[i][j].points.size();
+				if ( pt_num >= 3 ) {
+					auto average = grid_[i][j].mean / static_cast<ValueType>( pt_num );
+					grid_[i][j].mean = average;
+
+					for ( const auto& pt : grid_[i][j].points ) {
+						CovarinceType sigma = ( pt - grid_[i][j].mean ) * ( pt - grid_[i][j].mean ).transpose();
+						grid_[i][j].covarince += sigma;
+					}
+
+					grid_[i][j].covarince /= static_cast<ValueType>( pt_num );
+				}
+				else {
+					//grid_[i][j].covarince << std::numeric_limits<ValueType>::max(), 0, 0, std::numeric_limits<ValueType>::max();
+					grid_[i][j].covarince.setZero();
+					grid_[i][j].mean.setZero();
+				}
+
+			}
+		}
+
+		// print
+		for ( int i = 0; i < ROWS; i ++ ) {
+			for ( int j = 0; j < COLS; j ++ ) {
+				std::cout<<grid_[i][j].points.size()<<" ";
+			}
+			std::cout<<std::endl;
+		}
+		std::cout<<std::endl;
+	}
+
+	const MapPointType getPtIndex( const PointType& pt ) const
+	{
+		MapPointType pose_xy = MapPointType::Zero();
+	        pose_xy[0] = static_cast<int>( ( pt[0] / 2.5 ) * COLS );
+		pose_xy[1] = static_cast<int>( ( pt[1] / 2.5 ) * ROWS );
+
+		return pose_xy;
+	}
+
+	const ValueType cacuProbability( const PointType& x, const PointType& mean, const CovarinceType& covarince ) const
+	{
+		return ::exp( -( ( x - mean ).transpose() * covarince.inverse() * ( x - mean ) ) * 0.5 );
+	}
+
+private:
+	std::vector<std::vector<CellType<ValueType>>> grid_;
+	
+	//Eigen::Matrix<ValueType, ROWS, COLS> desc_ = Eigen::Matrix<ValueType, ROWS, COLS>::Zero();
+	
+	Eigen::Matrix<ValueType, DIMENSION, 1> desc_ = Eigen::Matrix<ValueType, DIMENSION, 1>::Zero();
+};
+
+}
+
+#endif
