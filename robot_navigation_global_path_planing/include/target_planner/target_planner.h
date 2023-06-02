@@ -108,7 +108,6 @@ public:
 
                 while ( !generate_flag ) {
                         if ( iter_cnt > 20 ) {
-                                visited_robot_pose.clear();
                                 plan_complete_flag = true;
 
                                 break;

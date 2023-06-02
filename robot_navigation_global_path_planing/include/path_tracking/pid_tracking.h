@@ -23,7 +23,7 @@ public:
 
 	Tracking()
 	{
-		yaw_pid_ = new PID<DataType>(0.2, 1.3, -1.3, 0.8, 0.5, 0.3);
+		yaw_pid_ = new PID<DataType>(0.2, 1.2, -1.2, 0.8, 0.0, 0.03);
 	}
 
 	~Tracking()
@@ -47,6 +47,12 @@ public:
 		return (p1 - p2).norm();
 	}
 
+	const DataType yawPidProcess( const DataType error )
+        {
+                return yaw_pid_->caculate( error );
+        }
+
+
 	const DataType yawPidProcess(const DataType& current_yaw, const DataType& dst_yaw)
 	{
 		return yaw_pid_->caculate(dst_yaw, current_yaw);
@@ -61,7 +67,7 @@ public:
 			auto dist = ( curr_pose - trajectory[i] ).norm();
 			if ( dist < min_dist  ) {
 				min_dist = dist;
-				min_pt_idx = -1;
+				min_pt_idx = i;
 			}	
 		}
 
@@ -87,16 +93,46 @@ public:
 		}
 
 		auto target_yaw = cacuYaw( trajectory[closed_idx], trajectory[closed_idx + 1] );
-		if ( std::abs( curr_yaw - target_yaw ) >= ( M_PI * 0.25 ) ) {
-			auto w = yawPidProcess( curr_yaw, target_yaw );
-			return { 0.0, -w };
-		}
-		else{
-			auto w = yawPidProcess( curr_yaw, target_yaw );
-			return { 0.15, -w };
-		}
+		std::cout<<"target yaw = "<<target_yaw<<std::endl;
+		std::cout<<"current yaw = "<<curr_yaw<<std::endl;
+
+		DataType error = 0;
+
+		if ( target_yaw >= 0 && curr_yaw >= 0 ) {
+                        error = target_yaw - curr_yaw;
+                }
+                else if ( target_yaw <= 0 && curr_yaw <= 0 ) {
+                        error = target_yaw - curr_yaw;
+                }
+                else if ( target_yaw < 0 && curr_yaw > 0 ) {
+                        if ( std::abs( target_yaw - curr_yaw ) >= ( ( M_PI - curr_yaw ) + ( M_PI + target_yaw ) ) ) {
+                                error = ( M_PI - curr_yaw ) + ( M_PI + target_yaw );
+                        }
+                        else {
+                                error = target_yaw - curr_yaw;
+                        }
+                }
+                else if ( target_yaw > 0 && curr_yaw < 0 ) {
+                        if ( ( target_yaw - curr_yaw ) >= ( ( M_PI + curr_yaw ) + ( M_PI - target_yaw ) ) ) {
+                                error = -( ( M_PI + curr_yaw ) + ( M_PI - target_yaw ) );
+                        }
+                        else {
+                                error = target_yaw - curr_yaw;
+                        }
+                }
+                std::cout<<"error = "<<error<<std::endl;
+
+                if ( std::abs( error ) >= ( M_PI * 0.25 ) ) {
+                        auto w = yawPidProcess( error );
+                        return { 0.0, -w };
+                }
+                else {
+                        auto w = yawPidProcess( error );
+                        return { 0.15, -w };
+                }
+
+                return { 0.0, 0.0 };
 		
-		return { 0.0, 0.0 };
 	}
 
 

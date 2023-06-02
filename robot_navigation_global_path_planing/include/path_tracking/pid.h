@@ -25,7 +25,7 @@ namespace pt
 
 		}
 
-		const DataType caculate(const DataType& target, const DataType& current)
+		const DataType caculate(const DataType target, const DataType current)
 		{
 			// error
 			DataType error = target - current;
@@ -57,6 +57,38 @@ namespace pt
 
 			return out;
 		}
+
+		const DataType caculate( const DataType error )
+                {
+                        // Proportional
+                        DataType p_out = kp_ * error;
+
+                        // Integral
+                        integral_ += error * dt_;
+                        DataType i_out = ki_ * integral_;
+
+                        // Derivative
+                        DataType derivative = (error - pre_error_) / dt_;
+                        DataType d_out = kd_ * derivative;
+
+                        // total output 
+                        DataType out = p_out + i_out + d_out;
+
+                        // limit
+                        if (out > max_) {
+                                out = max_;
+                        }
+                        else if (out < min_) {
+                                out = min_;
+                        }
+
+                        // update the pre_error
+                        pre_error_ = error;
+
+                        return out;
+                }
+
+
 
 	private:
 		DataType dt_;

@@ -239,10 +239,11 @@ void pathPlannerThread()
 
 
 		if ( !is_initialized && is_map_ready_flag ) {
-			//target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
-			target = Eigen::Vector2i ( 260, 253 );
+			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+			//target = Eigen::Vector2i ( 240, 251 );
 			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
 	
+			a_star.setMap( cost_map_image );
 			if ( a_star.findPath( robot_pose_map, target ) ) {
 				trajectory = a_star.getSmoothedPath();		
 				
