@@ -252,16 +252,16 @@ void pathPlannerThread()
 	std::vector<Eigen::Vector2f> visited_poses;
 
 	while ( 1 ) {
-                usleep( 200000 ); // frequency : 5 Hz
+                usleep( 100000 ); // frequency : 10 Hz
                 std::cout<<"----------------------------- path planning ----------------------- "<<std::endl;
 
 		if ( !is_initialized && is_map_ready_flag ) {
 			visited_poses.push_back( Eigen::Vector2f( 0.0, 0.0 ) );
 
 			//target = TargetPlanner::generatePlannedTargetGoal( map_image, obstacles, visited_poses, is_plan_completed ); // generate the target goal
-			target = Eigen::Vector2f( -1, 0.1 );
+			target = Eigen::Vector2f( 1, 0.1 );
 
-			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
+			std::cout<<"target ===================== ( "<<target.transpose()<<" )"<<std::endl;
 			geometry::PoseXYf target_pose_xy( target[0], target[1] );
                 	target_sender.send( target_pose_xy ); // send the target pose 
 
@@ -285,6 +285,7 @@ void pathPlannerThread()
 			usleep( 100000 );
 			odometry.sendControlVector( 0.0, 0.0 ); // stop the robot
 			std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
+	
 			break;
 
 			sleep(2);

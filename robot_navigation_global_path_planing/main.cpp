@@ -220,6 +220,7 @@ void pathPlannerThread()
 {
 
 	planner::AStar<float> a_star;
+	pt::Tracking<float> tracking;
 
 	bool is_initialized = false;
 	std::vector<Eigen::Vector2f> visited_robot_pose_vec;
@@ -238,21 +239,41 @@ void pathPlannerThread()
 
 
 		if ( !is_initialized && is_map_ready_flag ) {
-			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+			//target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+			target = Eigen::Vector2i ( 260, 253 );
 			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
 	
 			if ( a_star.findPath( robot_pose_map, target ) ) {
 				trajectory = a_star.getSmoothedPath();		
 				
-				Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
-				trajectory_sender.send( geometry_trajectory );
+				//Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
+				for ( const auto& pt : trajectory ) {
+					std::cout<<"( "<<pt.transpose()<<" )"<<std::endl;
+				}
+				std::cout<<std::endl;
+				//trajectory_sender.send( geometry_trajectory );
 
 				is_initialized = true;
 			}
+
+			continue;
 		}
 
+		if ( !is_map_ready_flag ) continue;
 
+		auto u = tracking.cacuControlVector( trajectory, robot_pose );
+		std::cout<<"u = ( "<<u.first<<", "<<u.second<<" )"<<std::endl;
+		
+		odometry.sendControlVector( u.first, u.second );
 
+		if ( ( robot_pose_xy - Eigen::Vector2f( 1, 0.3 ) ).norm() < 0.2 ) {
+			usleep( 100000 );
+                        odometry.sendControlVector( 0.0, 0.0 ); // stop the robot
+                        std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
+
+                        break;
+		
+		}
 	}
 }
 
@@ -265,12 +286,12 @@ int main()
 	std::thread keyboard_control_thread( keyboardControl );
         std::thread odometry_thread( odometryThread );
 	std::thread lidar_thread( lidarThread );
-	//std::thread pathPlanningThread( pathPlannerThread );
+	std::thread pathPlanningThread( pathPlannerThread );
 
         keyboard_control_thread.join();
         odometry_thread.join();
 	lidar_thread.join();
-	//pathPlanningThread.join();
+	pathPlanningThread.join();
 
 
         while ( 1 ) {

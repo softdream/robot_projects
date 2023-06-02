@@ -106,6 +106,7 @@ public:
 
 	bool findPath( const MapPoseType& src, const MapPoseType& target )
 	{
+		std::cout<<"start find path !"<<std::endl;
 		bool is_path_generated_ = false;
 
 		// 1. initilize the open list and the closed list
@@ -114,13 +115,15 @@ public:
 
 		// 2. put the starting node on the open list
 		open_list.push_back( new CellType( src ) );
-		
+		std::cout<<"here1"<<std::endl;
+
 		// 3. while the open list is not empty
 		CellType* current_node = nullptr;
 		while ( !open_list.empty() ) {
 			auto current_node_iter = open_list.begin();
 			current_node = *current_node_iter;
 
+			std::cout<<"here2"<<std::endl;
 			// find the node with the least 'F' in the open list
 			for ( auto it = open_list.begin(); it != open_list.end(); it ++ ) {
 				if ( (*it)->getScore() < current_node->getScore() ) {
@@ -129,6 +132,7 @@ public:
 				}
 			}
 
+			std::cout<<"here3"<<std::endl;
 			// if the current node is the target, stop search
 			if ( current_node->pose == target ) {
 				std::cout<<"find the best path to the target !"<<std::endl;
@@ -156,7 +160,7 @@ public:
 			// 		    /	    |      \
 			// 		   /	    |       \
 			// 	( i-1, j+1 )  ( i, j+1 ) ( i+1, j+1 )
-			
+			std::cout<<"here4"<<std::endl;
 			for ( int i = 0; i < directions_.size(); i ++ ) {
 				MapPoseType successor_pose = current_node->pose + directions_[i].first;
 
@@ -188,12 +192,14 @@ public:
 			}
 		}	
 
+		std::cout<<"here5"<<std::endl;
 		path_.clear();
 		if ( !is_path_generated_ ) {
 			std::cout<<"Can not find the path to the goal !"<<std::endl;	
 			return false;
 		}
 
+		std::cout<<"here6"<<std::endl;
 		// get the path
 		while ( current_node != nullptr ) {
 			path_.push_back( current_node->pose );

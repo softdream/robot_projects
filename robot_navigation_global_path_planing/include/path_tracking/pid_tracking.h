@@ -34,17 +34,8 @@ public:
 	const DataType cacuYaw(const Vector2& p1, const Vector2& p2)
 	{
 		Vector2 tmp = p2 - p1;
-		DataType yaw = 0;
 
-		if ( tmp[0] < 0 && tmp[1] > 0 ) {
-			yaw = M_PI + ::atan2(tmp[1], tmp[0]);
-		}
-		else if ( tmp[0] < 0 && tmp[1] < 0 ) {
-			yaw = ::atan2(tmp[1], tmp[0]) - M_PI;
-		}
-		else {
-			yaw = ::atan2(tmp[1], tmp[0]);
-		}
+		DataType yaw = ::atan2(tmp[1], tmp[0]);
 
 		Utils::angleNormalize( yaw );
 			
@@ -63,7 +54,7 @@ public:
 
 	const int findClosedPtIndex( const std::vector<Vector2>& trajectory, const Vector2& curr_pose )
 	{
-		int min_dist = std::numeric_limits<DataType>::max();
+		DataType min_dist = std::numeric_limits<DataType>::max();
 		int min_pt_idx = -1;
 
 		for ( int i = 0; i < trajectory.size(); i ++ ) {
@@ -96,7 +87,7 @@ public:
 		}
 
 		auto target_yaw = cacuYaw( trajectory[closed_idx], trajectory[closed_idx + 1] );
-		if ( std::abs( curr_yaw - target_yaw ) >= ( M_PI * 0.5 ) ) {
+		if ( std::abs( curr_yaw - target_yaw ) >= ( M_PI * 0.25 ) ) {
 			auto w = yawPidProcess( curr_yaw, target_yaw );
 			return { 0.0, -w };
 		}
