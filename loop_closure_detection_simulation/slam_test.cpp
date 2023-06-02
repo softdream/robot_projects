@@ -12,14 +12,16 @@
 #include <thread>
 #include <mutex>
 
-#include "loop_closure_detect.h"
+#include "pose_graph_optimize.h"
 
 // -------------------------- GLOBAL DATA -------------------------- //
 slam::SlamProcessor<float> slam_processor;
 cv::Mat image = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125));
 Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 
-slam::LoopDetect<float> loop_detect;
+slam::PoseOptimization<float> pgo;
+std::vector<Eigen::Vector3f> key_poses;
+std::vector<sensor::ScanContainer> key_scans;
 // ----------------------------------------------------------------- //
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
@@ -68,6 +70,7 @@ void threadSlam()
 	simulation.openSimulationFile( "/groupdata/share/ddf/Test/robot_test/robot_projects/loop_closure_detection_simulation/test_data/laser_test_data2.txt" );
 
 
+
 	int img_cnt = 0;
 	while( !simulation.endOfFile() ){
 		sensor::LaserScan scan;
@@ -77,16 +80,16 @@ void threadSlam()
 		laserData2Container( scan, scan_container );
 	
 		std::cout<<"frame count: "<<simulation.getFrameCount()<<std::endl;
-		//displayScan( scan_container );
 
-		// generate the scan contex
-		loop_detect.makeScanContext( scan );
 
-		/*if( simulation.getFrameCount() <= 10  ){
+		if( simulation.getFrameCount() <= 10  ){
 			slam_processor.processTheFirstScan( robot_pose, scan_container );
 			if( simulation.getFrameCount() == 10 ){
 				slam_processor.generateMap( image );
-
+				robot_pose = slam_processor.getLastScanMatchPose();
+				
+				key_poses.push_back( robot_pose );
+				key_scans.push_back( scan_container );
 			}
 		}
 		else {
@@ -99,15 +102,23 @@ void threadSlam()
 			
 			std::cout<<"robot pose now: "<<std::endl;
                         std::cout<<robot_pose<<std::endl;
-                        std::cout<<"------------------"<<std::endl;
+                        std::cout<<"------------------"<<std::endl<<std::endl;
 
 			if( slam_processor.isKeyFrame() ){
 				slam_processor.generateMap( image );
+			
+				key_poses.push_back( robot_pose );
+				key_scans.push_back( scan_container );
+
+				if ( key_poses.size() > 10 ) {
+					Eigen::Vector3f constraint = Eigen::Vector3f::Zero();
+					pgo.getLoopClosureConstraint( key_poses, key_scans, constraint );
+			
+				}
 			}
 		}
-		*/
+		
 
-		if ( img_cnt > 1 ) break;
 		img_cnt ++;
 
 		cv::waitKey(100);

@@ -66,7 +66,7 @@ public:
 		return data_vec_.empty();
 	}
 
-	const DataType& operator[] (const int i)
+	const DataType& operator[] (const int i) const
 	{
 		return data_vec_[i];
 	}

@@ -131,7 +131,7 @@ void drawPath( cv::Mat& costmap2, const std::vector<Eigen::Vector2f>& path, cons
 void threadSlam()
 {
 	simulation::Simulation simulation;
-	simulation.openSimulationFile( "/groupdata/share/ddf/Test/robot_test/robot_projects/navigation_simu/test_data/laser_test_data2.txt" );
+	simulation.openSimulationFile( "/groupdata/share/ddf/Test/robot_test/robot_projects/navigation_global_path_planning_simulation/test_data/laser_test_data2.txt" );
 
 
 	int img_cnt = 0;
