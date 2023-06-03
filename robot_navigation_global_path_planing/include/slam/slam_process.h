@@ -166,6 +166,23 @@ public:
                 }
         }
 
+        void generateCvMap( cv::Mat& map )
+        {
+                if ( map.type() != CV_8UC1 ) return;
+
+                for( int i = 0; i < grid_map_->getSizeX(); i ++ ) {
+                        for( int j = 0; j < grid_map_->getSizeY(); j ++ ) {
+                                if( grid_map_->isCellFree( i, j ) ) {
+                                        map.at<uchar>( i, j ) = 255;
+                                }
+                                else if( grid_map_->isCellOccupied( i, j ) ) {
+                                        map.at<uchar>( i, j ) = 0;
+                                }
+                        }
+                }
+        }
+
+
 private:
 	bool poseDiffLargerThan( const Eigen::Matrix<DataType, 3, 1> &pose_old, const Eigen::Matrix<DataType, 3, 1> &pose_new )	
 	{

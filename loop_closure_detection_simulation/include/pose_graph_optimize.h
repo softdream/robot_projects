@@ -1,6 +1,7 @@
 #ifndef __POSE_GRAPH_OPTIMIZE_H
 #define __POSE_GRAPH_OPTIMIZE_H
 
+#include "nano_pgo.hpp"
 #include "2d_icp.h"
 
 namespace slam
@@ -21,6 +22,22 @@ public:
 	~PoseOptimization()
 	{
 	
+	}
+
+	const bool optimize( const std::vector<PoseType>& key_pose,
+                             const std::vector<sensor::ScanContainer>& key_scans )
+	{
+		PoseType constraint = PoseType::Zero();
+
+		if ( !getLoopClosureConstraint( key_pose, key_scans, constraint ) ) {
+			return false;
+		} 
+
+		for ( int i = 0; i < key_pose.size() - 1; i ++ ) {
+			pgo_.addVertex( key_pose[i], i );
+			//pgo_.addEdge(  );
+		}
+
 	}
 
 	const bool getLoopClosureConstraint( const std::vector<PoseType>& key_pose,
@@ -80,6 +97,8 @@ private:
 	std::vector<PoseType> key_pose_excluded_;
 
 	const int NUM_EXCLUDE_RECENT = 10;
+
+	pgo::GraphOptimizer<ValueType> pgo_;
 };
 
 }

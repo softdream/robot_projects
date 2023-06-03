@@ -19,7 +19,7 @@ slam::SlamProcessor<float> slam_processor;
 cv::Mat image = cv::Mat( slam_processor.getSizeX(), slam_processor.getSizeY(), CV_8UC1, cv::Scalar(125));
 Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 
-slam::PoseOptimization<float> pgo;
+slam::PoseOptimization<float> pgo_detect;
 std::vector<Eigen::Vector3f> key_poses;
 std::vector<sensor::ScanContainer> key_scans;
 // ----------------------------------------------------------------- //
@@ -87,9 +87,11 @@ void threadSlam()
 			if( simulation.getFrameCount() == 10 ){
 				slam_processor.generateMap( image );
 				robot_pose = slam_processor.getLastScanMatchPose();
-				
+			
+				// for pgo
 				key_poses.push_back( robot_pose );
 				key_scans.push_back( scan_container );
+
 			}
 		}
 		else {
@@ -112,7 +114,7 @@ void threadSlam()
 
 				if ( key_poses.size() > 10 ) {
 					Eigen::Vector3f constraint = Eigen::Vector3f::Zero();
-					pgo.getLoopClosureConstraint( key_poses, key_scans, constraint );
+					pgo_detect.getLoopClosureConstraint( key_poses, key_scans, constraint );
 			
 				}
 			}

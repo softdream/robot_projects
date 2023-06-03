@@ -123,7 +123,7 @@ public:
 
                                 bool is_visited_flag = false;
                                 for ( const auto& robot_pose : visited_robot_pose ) {
-                                        if ( ( target_goal_world_pose - robot_pose ).norm() < 0.4 ) {
+                                        if ( ( target_goal_world_pose - robot_pose ).norm() < 0.6 ) {
                                                 is_visited_flag = true;
                                                 break;
                                         }

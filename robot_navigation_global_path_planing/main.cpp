@@ -16,10 +16,10 @@
 #include "pid_tracking.h"
 
 #include <thread>
+#include <mutex>
 
 // -------------------------------------- GLOBAL DATA ---------------------------------------- //
 odom::Odometry<float> odometry; // 1. odometry
-sensor::ScanContainer scan_container; // 2. scan container
 long scan_frame_cnt = 0; // 3. scan frame counter
 
 time_manage::Synchronize<time_manage::TimeManageData<Eigen::Vector3f>> sync_list; // 4. time synchronization
@@ -38,8 +38,11 @@ cv::Mat cost_map_image = cv::Mat( slam_processor.getSizeX(), slam_processor.getS
 
 bool is_map_ready_flag = false; // 11. global map ready flag
 
-transport::Sender odom_sender( "192.168.3.27", 2335 ); // send odometry data
-transport::Sender scan_sender( "192.168.3.27", 2336 ); // send lidar scan data
+std::mutex map_image_mux;
+std::mutex robot_pose_mux;
+
+//transport::Sender odom_sender( "192.168.3.27", 2335 ); // send odometry data
+//transport::Sender scan_sender( "192.168.3.27", 2336 ); // send lidar scan data
 transport::Sender map_sender( "192.168.3.27", 2337 ); // send map data
 transport::Sender pose_sender( "192.168.3.27", 2338 ); // send robot pose data
 transport::Sender trajectory_sender( "192.168.3.27", 2339 ); // send the trajectory data
@@ -111,8 +114,8 @@ void odometryCallback( const odom::Odometry<float>::Vector3& pose )
 	sync_list.addData( stamp, pose );
 
         // send to 
-        geometry::Pose2f pose_2( pose[0], pose[1], pose[2] );
-        odom_sender.send( pose_2 ); // send the odometry data
+        //geometry::Pose2f pose_2( pose[0], pose[1], pose[2] );
+        //odom_sender.send( pose_2 ); // send the odometry data
 }
 
 // thread 2 : odometry 
@@ -128,32 +131,14 @@ void odometryThread()
 // 10 Hz update frequency
 void lidarCallback( const sensor::LaserScan& scan )
 {
-#ifdef LOG_ON
-        std::cout<<"lidar data callback ..."<<std::endl;
+	//scan_sender.send( scan ); // send lidar scan data
 
-        std::cout<<"angle_min : "<<scan.angle_min<<std::endl;
-        std::cout<<"angle_max : "<<scan.angle_max<<std::endl;
-        std::cout<<"angle_increment : "<<scan.angle_increment<<std::endl;
-        std::cout<<"range_min : "<<scan.range_min<<std::endl;
-        std::cout<<"range_max : "<<scan.range_max<<std::endl;
-        std::cout<<"scan_time : "<<scan.scan_time<<std::endl;
-
-        std::cout<<"ranges : ";
-        for ( size_t i = 0; i < 10; i ++ ) {
-                std::cout<<scan.ranges[i]<<" ";
-        }
-        std::cout<<std::endl;
-#endif
-
-	scan_sender.send( scan ); // send lidar scan data
-
-	auto stamp = time_manage::TimeManage::getTimeStamp();
-
+	sensor::ScanContainer scan_container;
         Utils::laserData2Container( scan, scan_container );
-        //Utils::displayScan( scan_container );
 	
 	// caculate odometry delta pose
 	Eigen::Vector3f odom_delta_pose = Eigen::Vector3f::Zero();
+	auto stamp = time_manage::TimeManage::getTimeStamp();
 	auto odom_pose = sync_list.getSynchronizedData( stamp );
 
 	if ( !is_initialized ) {
@@ -173,7 +158,11 @@ void lidarCallback( const sensor::LaserScan& scan )
 		slam_processor.processTheFirstScan( robot_pose, scan_container );
 	
 		if ( scan_frame_cnt == 10 ) {
-			slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image
+			std::lock_guard<std::mutex> map_guard( map_image_mux );
+			{
+				slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image
+			}
+
 			sendMapImage( map_image ); // send initialized map
 
 			is_map_ready_flag = true; 
@@ -190,14 +179,22 @@ void lidarCallback( const sensor::LaserScan& scan )
 
 		// pose estimated by scan to map optimization
 		slam_processor.update( robot_pose, scan_container );
-		robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
+
+		std::lock_guard<std::mutex> pose_guard( robot_pose_mux );
+		{
+			robot_pose = slam_processor.getLastScanMatchPose(); // update the robot pose
+		}
 		std::cout<<"robot pose : "<<robot_pose.transpose()<<std::endl;
 		
 		geometry::Pose2f pose_2( robot_pose[0], robot_pose[1], robot_pose[2] );
         	pose_sender.send( pose_2 ); // send the global pose of the robot
 	
 		if ( slam_processor.isKeyFrame() ) {  // key pose
-			slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image		
+			std::lock_guard<std::mutex> map_guard( map_image_mux );
+			{
+				slam_processor.generateCvMap( map_image, cost_map_image ); // update the map image		
+			}
+
 			// send map
 			sendMapImage( map_image );
 		}
@@ -223,9 +220,11 @@ void pathPlannerThread()
 	pt::Tracking<float> tracking;
 
 	bool is_initialized = false;
+	bool is_plan_completed = false;
+
 	std::vector<Eigen::Vector2f> visited_robot_pose_vec;
         Eigen::Vector2i target = Eigen::Vector2i::Zero();
-	bool is_plan_completed = false;
+	Eigen::Vector2f target_world = Eigen::Vector2f::Zero();
 
 	std::vector<Eigen::Vector2f> trajectory;
 	std::vector<geometry::PoseXY<float>> geometry_trajectory;
@@ -237,22 +236,19 @@ void pathPlannerThread()
 		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
                 Eigen::Vector2i robot_pose_map = Utils::coordinateTransformWorld2Map( robot_pose_xy, Eigen::Vector2i( 250, 250 ), 0.1f );
 
-
+		// 1. generate the first target 
 		if ( !is_initialized && is_map_ready_flag ) {
 			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
-			//target = Eigen::Vector2i ( 240, 251 );
-			std::cout<<"target = ( "<<target.transpose()<<" )"<<std::endl;
+			target_world = Utils::coordinateTransformMap2World( target, Eigen::Vector2i( 250, 250 ), 0.1f );
+			std::cout<<"target world = ( "<<target_world.transpose()<<" )"<<std::endl;
 	
 			a_star.setMap( cost_map_image );
 			if ( a_star.findPath( robot_pose_map, target ) ) {
+				std::cout<<"find a path to the goal !"<<std::endl;
 				trajectory = a_star.getSmoothedPath();		
 				
-				//Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
-				for ( const auto& pt : trajectory ) {
-					std::cout<<"( "<<pt.transpose()<<" )"<<std::endl;
-				}
-				std::cout<<std::endl;
-				//trajectory_sender.send( geometry_trajectory );
+				Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
+				trajectory_sender.send( geometry_trajectory );
 
 				is_initialized = true;
 			}
@@ -262,18 +258,42 @@ void pathPlannerThread()
 
 		if ( !is_map_ready_flag ) continue;
 
+		// 2. path tracking
 		auto u = tracking.cacuControlVector( trajectory, robot_pose );
 		std::cout<<"u = ( "<<u.first<<", "<<u.second<<" )"<<std::endl;
 		
 		odometry.sendControlVector( u.first, u.second );
 
-		if ( ( robot_pose_xy - Eigen::Vector2f( 1, 0.3 ) ).norm() < 0.2 ) {
+		// 3. arrived the target goal
+		if ( ( robot_pose_xy - target_world ).norm() < 0.2 ) {
 			usleep( 100000 );
                         odometry.sendControlVector( 0.0, 0.0 ); // stop the robot
                         std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
 
-                        break;
-		
+			sleep(2); // delay 2 seconds, and then generate the next target goal
+			visited_robot_pose_vec.push_back( target_world );
+
+			// regenerate the target goal
+			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+			target_world = Utils::coordinateTransformMap2World( target, Eigen::Vector2i( 250, 250 ), 0.1f );
+                        std::cout<<"target world = ( "<<target_world.transpose()<<" )"<<std::endl;
+			
+			if ( is_plan_completed ) {
+				std::cout<<"the robot has traveled all around the world !"<<std::endl;
+                                break;
+			}
+
+			a_star.setMap( cost_map_image );
+                        if ( a_star.findPath( robot_pose_map, target ) ) {
+                                std::cout<<"find a path to the goal !"<<std::endl;
+
+				trajectory.clear();
+                                trajectory = a_star.getSmoothedPath();
+
+                                Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
+                                trajectory_sender.send( geometry_trajectory );
+                        }
+
 		}
 	}
 }

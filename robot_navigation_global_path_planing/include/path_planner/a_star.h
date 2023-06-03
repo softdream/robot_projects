@@ -106,7 +106,6 @@ public:
 
 	bool findPath( const MapPoseType& src, const MapPoseType& target )
 	{
-		std::cout<<"start find path !"<<std::endl;
 		bool is_path_generated_ = false;
 
 		// 1. initilize the open list and the closed list
