@@ -148,7 +148,7 @@ public:
 		return * grid_map_;
 	}
 
-	void generateCvMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 3 )
+	void generateCvMap( cv::Mat& map, cv::Mat& costmap, int inflate_radius = 4 )
         {
                 if ( map.type() != CV_8UC1 || costmap.type() != CV_8UC1 ) return;
 

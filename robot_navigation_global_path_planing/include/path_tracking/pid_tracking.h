@@ -23,7 +23,7 @@ public:
 
 	Tracking()
 	{
-		yaw_pid_ = new PID<DataType>(0.2, 1.2, -1.2, 0.8, 0.0, 0.03);
+		yaw_pid_ = new PID<DataType>(0.2, 1.2, -1.2, 0.9, 0, 0.06);
 	}
 
 	~Tracking()
@@ -122,7 +122,7 @@ public:
                 }
                 std::cout<<"error = "<<error<<std::endl;
 
-                if ( std::abs( error ) >= ( M_PI * 0.25 ) ) {
+                if ( std::abs( error ) >= ( M_PI * 0.125 ) ) {
                         auto w = yawPidProcess( error );
                         return { 0.0, -w };
                 }

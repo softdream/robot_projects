@@ -236,12 +236,21 @@ void pathPlannerThread()
 		Eigen::Vector2f robot_pose_xy = robot_pose.head(2);
                 Eigen::Vector2i robot_pose_map = Utils::coordinateTransformWorld2Map( robot_pose_xy, Eigen::Vector2i( 250, 250 ), 0.1f );
 
-		// 1. generate the first target 
+		// 1. generate the  target 
 		if ( !is_initialized && is_map_ready_flag ) {
+			visited_robot_pose_vec.push_back( target_world );
+
 			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
+		
 			target_world = Utils::coordinateTransformMap2World( target, Eigen::Vector2i( 250, 250 ), 0.1f );
 			std::cout<<"target world = ( "<<target_world.transpose()<<" )"<<std::endl;
 	
+			if ( is_plan_completed ) {
+                                std::cout<<"the robot has traveled all around the world !"<<std::endl;
+                                break;
+                        }
+
+
 			a_star.setMap( cost_map_image );
 			if ( a_star.findPath( robot_pose_map, target ) ) {
 				std::cout<<"find a path to the goal !"<<std::endl;
@@ -265,7 +274,7 @@ void pathPlannerThread()
 		odometry.sendControlVector( u.first, u.second );
 
 		// 3. arrived the target goal
-		if ( ( robot_pose_xy - target_world ).norm() < 0.2 ) {
+		if ( ( robot_pose_xy - target_world ).norm() < 0.2 || ( u.first == 0 && u.second == 0 ) ) {
 			usleep( 100000 );
                         odometry.sendControlVector( 0.0, 0.0 ); // stop the robot
                         std::cout<<"--------------------------- target goal is arrived ! --------------------------"<<std::endl;
@@ -273,27 +282,9 @@ void pathPlannerThread()
 			sleep(2); // delay 2 seconds, and then generate the next target goal
 			visited_robot_pose_vec.push_back( target_world );
 
-			// regenerate the target goal
-			target = TargetPlanner::generatePlannedTargetGoal( cost_map_image, visited_robot_pose_vec, is_plan_completed );
-			target_world = Utils::coordinateTransformMap2World( target, Eigen::Vector2i( 250, 250 ), 0.1f );
-                        std::cout<<"target world = ( "<<target_world.transpose()<<" )"<<std::endl;
-			
-			if ( is_plan_completed ) {
-				std::cout<<"the robot has traveled all around the world !"<<std::endl;
-                                break;
-			}
 
-			a_star.setMap( cost_map_image );
-                        if ( a_star.findPath( robot_pose_map, target ) ) {
-                                std::cout<<"find a path to the goal !"<<std::endl;
-
-				trajectory.clear();
-                                trajectory = a_star.getSmoothedPath();
-
-                                Utils::convertEigenVec2PoseXYVec( trajectory, geometry_trajectory );
-                                trajectory_sender.send( geometry_trajectory );
-                        }
-
+			// need regenerate the target goal
+			is_initialized = false;
 		}
 	}
 }
