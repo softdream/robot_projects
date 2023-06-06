@@ -22,6 +22,10 @@ Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
 slam::PoseOptimization<float> pgo_detect;
 std::vector<Eigen::Vector3f> key_poses;
 std::vector<sensor::ScanContainer> key_scans;
+
+pgo::GraphOptimizer<float> pose_optimizer;
+
+std::ofstream out;
 // ----------------------------------------------------------------- //
 
 void laserData2Container( const sensor::LaserScan& scan, sensor::ScanContainer& container )
@@ -72,6 +76,8 @@ void threadSlam()
 
 
 	int img_cnt = 0;
+	int vertex_cnt = 0;
+	int constriant_cnt = 0;
 	while( !simulation.endOfFile() ){
 		sensor::LaserScan scan;
 		sensor::ScanContainer scan_container;
@@ -92,6 +98,9 @@ void threadSlam()
 				key_poses.push_back( robot_pose );
 				key_scans.push_back( scan_container );
 
+				// record
+				out << "pose "<< robot_pose[0]<<" "<<robot_pose[1]<<" "<<robot_pose[2]<<std::endl;
+				vertex_cnt ++;
 			}
 		}
 		else {
@@ -112,11 +121,44 @@ void threadSlam()
 				key_poses.push_back( robot_pose );
 				key_scans.push_back( scan_container );
 
+				// record
+                                out << "pose "<< robot_pose[0]<<" "<<robot_pose[1]<<" "
+<<robot_pose[2]<<std::endl;
+				vertex_cnt ++;
+
 				if ( key_poses.size() > 10 ) {
 					Eigen::Vector3f constraint = Eigen::Vector3f::Zero();
-					pgo_detect.getLoopClosureConstraint( key_poses, key_scans, constraint );
-			
+					auto ret = pgo_detect.getLoopClosureConstraint( key_poses, key_scans, constraint );
+					if ( ret != -1 ) {
+						out<<"constraint "<<vertex_cnt<<" "<<ret<<" "<<constraint[0]<<" "<<constraint[1]<<" "<<constraint[2]<<std::endl;
+						constriant_cnt ++;
+				
+						if ( constriant_cnt == 1 ) {
+							for ( int i = 0; i < key_poses.size() - 1; i ++ ) {
+								pose_optimizer.addVertex( key_poses[i], i );
+
+
+					                	Eigen::Vector3f V = pose_optimizer.homogeneousCoordinateTransformation( key_poses[i], key_poses[i + 1] );
+
+                						Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity();
+                						pose_optimizer.addEdge( V, i, i + 1, info_matrix );
+							}
+							pose_optimizer.addVertex( key_poses.back(), key_poses.size() - 1 );
+							Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity();
+
+                					pose_optimizer.addEdge( constraint, vertex_cnt, ret, info_matrix );
+							pose_optimizer.execuGraphOptimization( 2 );
+
+							slam_processor.reConstructMap(  key_poses, key_scans );
+
+							slam_processor.generateMap( image );
+							cv::imshow( "map", image );
+							cv::waitKey(0);
+						}
+				
+					}
 				}
+
 			}
 		}
 		
@@ -133,6 +175,12 @@ void threadSlam()
 int main()
 {
 	std::cout<<"---------------------- PATH PLANNING TEST ----------------------"<<std::endl;
+
+	out.open("key_poses.txt", std::ios::out);
+	if ( !out.is_open() ) {
+		std::cerr<<"Can not open the file !"<<std::endl;
+		return 0;
+	}
 
 	std::thread t1( threadSlam );
 

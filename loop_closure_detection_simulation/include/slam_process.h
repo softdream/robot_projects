@@ -142,6 +142,16 @@ public:
 		return is_key_frame_;
 	}
 
+	void reConstructMap( const std::vector<Eigen::Matrix<DataType, 3, 1>>& key_poses, 
+		       	     const std::vector<sensor::ScanContainer>& key_scans )
+	{
+		grid_map_->resetGridMap();
+
+		for ( int i = 0; i < key_poses.size(); i ++ ) {
+			grid_map_->updateMapByScan( key_scans[i], key_poses[i] );
+		}
+	}
+
 	void displayMap( cv::Mat &image )
 	{
 		int occupiedCount = 0;

@@ -40,7 +40,7 @@ public:
 
 	}
 
-	const bool getLoopClosureConstraint( const std::vector<PoseType>& key_pose,
+	const int getLoopClosureConstraint( const std::vector<PoseType>& key_pose,
 					     const std::vector<sensor::ScanContainer>& key_scans,
 		       			     PoseType& constraint )
 	{
@@ -48,7 +48,7 @@ public:
 
 		int loop_id = loopClosureDetect( key_pose, curr_pose );
 
-		if ( loop_id == -1 ) return false;
+		if ( loop_id == -1 ) return -1;
 
 		std::cout<<"curr pose = "<<curr_pose.transpose()<<std::endl;
 		std::cout<<"looped pose = "<<key_pose[loop_id].transpose()<<std::endl;
@@ -57,7 +57,9 @@ public:
 		//}
 		std::cout<<std::endl;
 
-		constraint = curr_pose - key_pose[loop_id];
+		//constraint = curr_pose - key_pose[loop_id];
+		//constraint = key_pose[loop_id] - curr_pose;
+		constraint = PoseType::Zero();
 
 		slam::ICP<ValueType> icp;
 		sensor::ScanContainer looped_scan = key_scans[loop_id];
@@ -66,7 +68,7 @@ public:
 		icp.solveICP( looped_scan, curr_scan, constraint );
 		std::cout<<"constraint = ( "<<constraint.transpose()<<" )"<<std::endl;
 
-		return true;
+		return loop_id;
 	}
 
 	const int loopClosureDetect( const std::vector<PoseType>& key_pose, const PoseType& curr_pose )
