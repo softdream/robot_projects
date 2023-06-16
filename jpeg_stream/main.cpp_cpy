@@ -1,0 +1,51 @@
+#include <iostream>
+#include "image_utils.h"
+
+#include <opencv2/opencv.hpp>
+
+extern "C" {
+#include "sp_codec.h"
+#include "sp_sys.h"
+}
+
+char stream_buffer[960 * 544 * 3];
+
+int main() 
+{
+
+	std::cout<<"--------------- ENCODER TEST ------------------"<<std::endl;
+	cv::Mat image = cv::imread("0.jpg");
+
+	cv::imshow("image", image);
+
+	cv::waitKey(0);
+
+	cv::Mat nv12_img;
+	int ret = ImageUtils::BGRToNv12( image, nv12_img );
+	std::cout<<"convert ret = "<<ret<<std::endl;
+
+	void *encoder = sp_init_encoder_module();
+	if ( encoder == NULL ) {
+		std::cerr<<"init encoder failed !"<<std::endl;
+		return 0;
+	}
+
+	ret = sp_start_encode( encoder, 0, SP_ENCODER_H264, 960, 544, 1024 );	
+	if ( ret != 0 ) {
+		std::cerr<<"Error to start encoder !"<<std::endl;
+		return 0;
+	}
+
+	ret = sp_encoder_set_frame( encoder, (char *)nv12_img.data, 960 * 544 * 3 / 2 );
+	if ( ret != 0 ) {
+		std::cerr<<"Failed to encode the data !"<<std::endl;
+	}
+
+	int size = sp_encoder_get_stream( encoder, stream_buffer );
+	std::cout<<"encoded size = "<<size<<std::endl;
+
+	sp_stop_encode( encoder );
+	sp_release_encoder_module( encoder );
+
+	return 0;
+}
