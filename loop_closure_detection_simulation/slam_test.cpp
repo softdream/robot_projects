@@ -86,7 +86,12 @@ void threadSlam()
 		laserData2Container( scan, scan_container );
 	
 		std::cout<<"frame count: "<<simulation.getFrameCount()<<std::endl;
-
+		if ( simulation.getFrameCount() == 2 ) {
+			// for pgo
+                        key_poses.push_back( robot_pose );
+                        key_scans.push_back( scan_container );
+		}
+			
 
 		if( simulation.getFrameCount() <= 10  ){
 			slam_processor.processTheFirstScan( robot_pose, scan_container );
@@ -94,10 +99,6 @@ void threadSlam()
 				slam_processor.generateMap( image );
 				robot_pose = slam_processor.getLastScanMatchPose();
 			
-				// for pgo
-				key_poses.push_back( robot_pose );
-				key_scans.push_back( scan_container );
-
 				// record
 				out << "pose "<< robot_pose[0]<<" "<<robot_pose[1]<<" "<<robot_pose[2]<<std::endl;
 				vertex_cnt ++;
@@ -130,8 +131,16 @@ void threadSlam()
 					Eigen::Vector3f constraint = Eigen::Vector3f::Zero();
 					auto ret = pgo_detect.getLoopClosureConstraint( key_poses, key_scans, constraint );
 					if ( ret != -1 ) {
+						std::cout<<"vertex_cnt = "<<vertex_cnt<<", key_pose,size() = "<<key_poses.size()<<std::endl;
 						out<<"constraint "<<vertex_cnt<<" "<<ret<<" "<<constraint[0]<<" "<<constraint[1]<<" "<<constraint[2]<<std::endl;
 						constriant_cnt ++;
+			
+						//displayScan( key_scans.back() );
+						//cv::waitKey(0);
+
+						//displayScan( key_scans[ret] );
+                                                //cv::waitKey(0);
+
 				
 						if ( constriant_cnt == 1 ) {
 							for ( int i = 0; i < key_poses.size() - 1; i ++ ) {
@@ -140,14 +149,18 @@ void threadSlam()
 
 					                	Eigen::Vector3f V = pose_optimizer.homogeneousCoordinateTransformation( key_poses[i], key_poses[i + 1] );
 
-                						Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity();
+                						Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity() * 0.011;
                 						pose_optimizer.addEdge( V, i, i + 1, info_matrix );
 							}
 							pose_optimizer.addVertex( key_poses.back(), key_poses.size() - 1 );
-							Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity();
+							Eigen::Matrix3f info_matrix = Eigen::Matrix3f::Identity() * 1000;
 
-                					pose_optimizer.addEdge( constraint, vertex_cnt, ret, info_matrix );
+							constraint = Eigen::Vector3f::Zero();
+                					pose_optimizer.addEdge( constraint, vertex_cnt - 1, ret, info_matrix );
 							pose_optimizer.execuGraphOptimization( 2 );
+
+							key_poses = pose_optimizer.getReultVertexPosesVector();
+							std::cout<<"key poses.size  = "<<key_poses.size()<<std::endl;	
 
 							slam_processor.reConstructMap(  key_poses, key_scans );
 
@@ -165,7 +178,7 @@ void threadSlam()
 
 		img_cnt ++;
 
-		cv::waitKey(100);
+		cv::waitKey(10);
 	}
 
 	simulation.closeSimulationFile();

@@ -143,13 +143,13 @@ private:
 				    0, 1,  pt_in_second[0] * ::cos( p[2] ) - pt_in_second[1] * ::sin( p[2] ); 
 
 			Hessian_ += Jacobian.transpose() * Jacobian;
-			B_ += -Jacobian.transpose() * error;
+			B_ += Jacobian.transpose() * error;
 		}
 
 		if ( Hessian_.determinant() == 0 ) return;
 
 		// 8. caculate the increment of the transformation
-		PoseType delta_p = Hessian_.inverse() * B_;
+		PoseType delta_p = -Hessian_.inverse() * B_;
 
 		// 9. update the pose p
 		p += delta_p;

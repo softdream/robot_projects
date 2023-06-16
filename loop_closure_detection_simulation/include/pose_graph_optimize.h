@@ -29,14 +29,21 @@ public:
 	{
 		PoseType constraint = PoseType::Zero();
 
-		if ( !getLoopClosureConstraint( key_pose, key_scans, constraint ) ) {
-			return false;
-		} 
+		int loop_id = getLoopClosureConstraint( key_pose, key_scans, constraint );
+		if ( loop_id == -1 ) return false;		
 
 		for ( int i = 0; i < key_pose.size() - 1; i ++ ) {
 			pgo_.addVertex( key_pose[i], i );
-			//pgo_.addEdge(  );
+			Eigen::Matrix<ValueType, 3, 1> V = pgo_.homogeneousCoordinateTransformation( key_pose[i], key_pose[i + 1] );
+			Eigen::Matrix<ValueType, 3, 3> info_matrix = Eigen::Matrix<ValueType, 3, 3>::Zero();
+			pgo_.addEdge( V, i, i + 1, info_matrix );
 		}
+		pgo_.addVertex( key_pose.back(), key_pose.size() - 1 );
+
+		Eigen::Matrix<ValueType, 3, 3> info_matrix = Eigen::Matrix<ValueType, 3, 3>::Zero();
+		pgo_.addEdge( constraint, key_pose.size() - 1, loop_id, info_matrix );
+
+		pgo_.execuGraphOptimization( 2 );
 
 	}
 
@@ -63,7 +70,10 @@ public:
 
 		slam::ICP<ValueType> icp;
 		sensor::ScanContainer looped_scan = key_scans[loop_id];
+		std::cout<<"looped scan size = "<<looped_scan.getSize()<<std::endl;
+
 		sensor::ScanContainer curr_scan = key_scans.back();
+		std::cout<<"curr scan size = "<<curr_scan.getSize()<<std::endl;
 
 		icp.solveICP( looped_scan, curr_scan, constraint );
 		std::cout<<"constraint = ( "<<constraint.transpose()<<" )"<<std::endl;
