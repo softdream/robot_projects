@@ -33,9 +33,16 @@ public:
 		setNonBlock();
         }
 
+	UdpServer( const int port )
+        {
+                initUdpServer( port );
+                setNonBlock();
+        }
+
+
         ~UdpServer()
         {
-
+		closeUdpServer();
         }
 
         bool initUdpServer( const int port = 3333 )
@@ -61,6 +68,11 @@ public:
                 return true;
         }
 
+	void closeUdpServer()
+	{
+		close( sock_fd );
+	}
+
         const int getSocketFd() const
         {
                 return sock_fd;
@@ -74,11 +86,7 @@ public:
 
                 if( ret <= 0 ){
                         std::cerr<<"recv failed : "<<ret<<std::endl;
-
                 }
-		else {
-			std::cout<<recv_buffer<<std::endl;
-		}
 
                 return ret;
         }
@@ -105,6 +113,11 @@ public:
         		std::cerr<<"fcntl F_SETFL fail"<<std::endl;
 
 		}
+	}
+
+	const char* getRecvBuffer() const
+	{
+		return recv_buffer;
 	}
 
 protected:
