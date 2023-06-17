@@ -18,10 +18,29 @@
 
 #include <arpa/inet.h>
 
-#include <vector>
 
 namespace transport
 {
+
+typedef struct Pose2D_
+{
+
+	Pose2D_()
+	{
+
+	}
+
+	Pose2D_( const float x_, const float y_, const float theta_ ) : 
+		 x( x_ ), y( y_ ), theta( theta_ )
+	{
+
+	}
+
+	float x = 0.0;
+	float y = 0.0;
+	float theta = 0.0;
+
+}Pose2D;
 
 template<int BUFFER_SIZE>
 class UdpServer
@@ -30,19 +49,12 @@ public:
         UdpServer()
         {
 		initUdpServer();
-		//setNonBlock();
+		setNonBlock();
         }
-
-	UdpServer( const int port )
-        {
-                initUdpServer( port );
-                //setNonBlock();
-        }
-
 
         ~UdpServer()
         {
-		closeUdpServer();
+
         }
 
         bool initUdpServer( const int port = 3333 )
@@ -68,11 +80,6 @@ public:
                 return true;
         }
 
-	void closeUdpServer()
-	{
-		close( sock_fd );
-	}
-
         const int getSocketFd() const
         {
                 return sock_fd;
@@ -86,7 +93,11 @@ public:
 
                 if( ret <= 0 ){
                         std::cerr<<"recv failed : "<<ret<<std::endl;
+
                 }
+		else {
+			std::cout<<recv_buffer<<std::endl;
+		}
 
                 return ret;
         }
@@ -113,11 +124,6 @@ public:
         		std::cerr<<"fcntl F_SETFL fail"<<std::endl;
 
 		}
-	}
-
-	const char* getRecvBuffer() const
-	{
-		return recv_buffer;
 	}
 
 protected:
@@ -173,7 +179,7 @@ public:
         	else {
                 	std::cerr<<"send data succussfully ..."<<ret<<std::endl;
         	}
-		return ret;
+		return true;
 	}
 	
 	const int write( const char* data, const int len, const int port )
@@ -191,7 +197,7 @@ public:
                 else {
                         std::cerr<<"send data succussfully ..."<<std::endl;
                 }
-                return ret;
+                return true;
         }
 
 	const int write( const char* data, const int len, const int port, const std::string& ip )
@@ -209,7 +215,7 @@ public:
                 else {
                         std::cerr<<"send data succussfully ..."<<std::endl;
                 }
-                return ret;
+                return true;
         }
 
 protected:
@@ -307,14 +313,7 @@ public:
 	} 
 
 	template<typename T>
-	int send( const std::vector<T>& vec )
-	{
-		return this->write( (char *)vec.data(), vec.size() * sizeof( T ), port_, ip_ );
-	}
-
-	// SFINAE
-	template<typename T, typename = typename std::enable_if<!std::is_same<T, std::vector<T, std::allocator<T>>>::value>::type>
-	int send( const T& data )
+	int send( T&& data )
 	{
 		return this->write( (char *)&data, sizeof( data ), port_, ip_ );
 	}
@@ -324,16 +323,6 @@ public:
         {
                 return this->write( (char *)&data, sizeof( data ), port, ip );
         }
-
-	int send( char* buffer, int len, const std::string& ip, const int port )
-	{
-		return this->write( buffer, len, port, ip );
-	}
-
-	int send( char* buffer, int len )
-	{
-		return this->write( buffer, len, port_, ip_ );
-	}
 
 private:
 	std::string ip_;

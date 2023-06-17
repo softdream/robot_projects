@@ -8,8 +8,8 @@
 #include <functional>
 
 
-#define WIDTH 720
-#define HEIGHT 480
+#define WIDTH 480
+#define HEIGHT 360
 
 namespace stream
 {
@@ -54,6 +54,8 @@ public:
 
 		if ( ret > 0 ) {
 			std::string str = udp_->getRecvBuffer();
+			std::cout<<"str = "<<str<<std::endl;
+
 			if ( !str.compare( "start" ) ) {
 				std::cout<<"can start video transport !"<<std::endl;
 				return nullptr;
