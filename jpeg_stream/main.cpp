@@ -105,6 +105,11 @@ int main()
 				cv::imencode( ".jpg", image, vec, params );
 				std::cout<<"encoded size = "<<vec.size()<<std::endl;
 
+				if ( vec.size() > 6000 ) {
+					std::cout<<"too large !"<<std::endl;
+					continue;
+				}
+
 				int ret = ::sendto( sock_fd, (char *)vec.data(), vec.size(), 0, (struct sockaddr*)&client_sock_addr, client_sock_len );
 
 		                if( ret <= 0 ){
