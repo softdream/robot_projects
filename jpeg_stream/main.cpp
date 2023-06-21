@@ -99,10 +99,13 @@ int main()
 
 				std::vector<unsigned char> vec;
 				std::vector<int> params;
-				params.push_back(cv::IMWRITE_JPEG_QUALITY);
+				//params.push_back(cv::IMWRITE_JPEG_QUALITY);
+				params.push_back(cv::IMWRITE_WEBP_QUALITY);
 				params.push_back( 20 );
 
-				cv::imencode( ".jpg", image, vec, params );
+				cv::imencode( ".webp", image, vec, params );
+
+				//cv::imencode( ".jpg", image, vec, params );
 				std::cout<<"encoded size = "<<vec.size()<<std::endl;
 
 				if ( vec.size() > 6000 ) {
