@@ -1,0 +1,46 @@
+#include "body_detect.h"
+
+int main()
+{
+	std::cout<<"---------------- BODY DETECT ---------------"<<std::endl;
+
+	body_detect::BodyDetection detect;
+
+	/*cv::VideoCapture capture(8);
+
+        if( !capture.isOpened() ){
+                std::cerr<<"Can not Open the Camera !"<<std::endl;
+                return 0;
+        }
+
+        std::cout<<"Open the Camera !"<<std::endl;
+
+	cv::Mat frame;
+	while ( 1 ) {
+		capture >> frame;
+
+		if( cv::waitKey(40) == 'q' ){
+                        break;
+                }
+
+		cv::resize( frame, frame, cv::Size( 960, 544 ) );
+		cv::flip( frame, frame, 0 );
+
+		detect.imageProcess( frame );
+		detect.displayResults( frame );
+	        cv::imshow( "ret", frame );
+
+	}
+	*/
+
+	cv::Mat frame = cv::imread( "/home/sunrise/workstation/sunrise_bpu/dnn_body_detect/test_data/3.jpg" );
+
+	cv::resize( frame, frame, cv::Size( 960, 544 ) );
+	
+	detect.imageProcess( frame );
+        detect.displayResults( frame );
+        cv::imshow( "ret", frame );
+	cv::waitKey( 0 );
+
+	return 0;
+}
