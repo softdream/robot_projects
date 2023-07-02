@@ -1,4 +1,7 @@
 #include "body_detect.h"
+#include "data_transport.h"
+
+transport::Sender images_sender( "192.168.3.27", 2400 );
 
 int main()
 {
@@ -28,7 +31,7 @@ int main()
 
 		detect.imageProcess( frame );
 		detect.displayResults( frame );
-	        cv::imshow( "ret", frame );
+	        //cv::imshow( "ret", frame );
 
 		std::vector<unsigned char> vec;
                 std::vector<int> params;
@@ -39,6 +42,7 @@ int main()
 		
 		std::cout<<"encoded size = "<<vec.size()<<std::endl;
 
+		images_sender.send( vec );
 	}
 
 
